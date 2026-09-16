@@ -1,11 +1,14 @@
 class Player {
-    constructor(x = 0, y = 0) {
+    constructor(x = 0, y = 0, name = 'Player 1', health = 5) {
         this.x = x;
         this.y = y;
+        this.name = name;
+        this.health = health;
     }
 
     debug() {
         console.log(`Position du joueur: (${this.x}, ${this.y})`);
+        console.log(`Nom: ${this.name}, Santé: ${this.health}`);
     }
 
     move(direction) {
@@ -23,7 +26,7 @@ class Player {
                 this.x += 1;
                 break;
             default:
-                console.log('Direction invalide');
+            throw new Error('Direction invalide');
         }
     }
 }
