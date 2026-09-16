@@ -18,6 +18,18 @@ wss.on('connection', (ws) => {
 });
 
 
-server.listen(8080, () => {
-  console.log('Serveur Démarré');
-});
+function startServer() {
+  server.listen(8080, () => {
+    console.log('Serveur Démarré');
+  });
+}
+
+function stopServer() {
+  server.close(() => {
+    console.log('Serveur Arrêté');
+  });
+}
+
+module.exports = { startServer, stopServer };
+
+startServer();
