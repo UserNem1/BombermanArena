@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+out/
+*.log
+.DS_Store
+*.tsbuildinfo
+
+# TypeScript compiled output (client)
+client/main.js
+client/preload.js
+client/renderer.js

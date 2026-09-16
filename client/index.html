@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<!--
+  Page principale de l'application (renderer).
+
+  Charge la librairie PixiJS via un import map, puis le script
+  renderer compilé (renderer.js) qui initialise le canvas de jeu.
+  La Content-Security-Policy autorise l'exécution demandée par PixiJS
+  ('unsafe-eval') et la création de workers (blob:) pour le rendu.
+-->
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Bomberman Arena</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval'; worker-src 'self' blob:;" />
+</head>
+<body>
+  <!-- Associe l'identifiant "pixi.js" au bundle ESM local (pas de CDN). -->
+  <script type="importmap">
+    { "imports": { "pixi.js": "./node_modules/pixi.js/dist/pixi.min.mjs" } }
+  </script>
+  <!-- Point d'entrée du renderer (fichier compilé depuis renderer.ts). -->
+  <script type="module" src="renderer.js"></script>
+</body>
+</html>

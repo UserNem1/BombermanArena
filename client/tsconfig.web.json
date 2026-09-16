@@ -1,0 +1,24 @@
+{
+  /**
+   * Configuration TypeScript du renderer (renderer.ts).
+   *
+   * Ce fichier s'exécute dans le navigateur Chromium d'Electron en tant
+   * qu'ES Module (balise <script type="module">) :
+   * - module: "ESNext" conserve les imports ES natifs dans le rendu.
+   * - moduleResolution: "Bundler" résout correctement les types de pixi.js.
+   * - lib: DOM fournit les types de window/document/canvas.
+   *
+   * Le rendu est émis en .js à côté des sources .ts (fichiers ignorés par .gitignore).
+   */
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["ES2022", "DOM"]
+  },
+  "include": ["renderer.ts"]
+}
