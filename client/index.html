@@ -12,6 +12,11 @@
     <meta charset="UTF-8">
     <title>Bomberman Arena</title>
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval'; worker-src 'self' blob:;" />
+    <style>
+      /* Le canvas doit occuper toute la fenêtre, sans marge ni barre de défilement. */
+      body { margin: 0; overflow: hidden; }
+      canvas { display: block; }
+    </style>
 </head>
 <body>
   <!-- Associe l'identifiant "pixi.js" au bundle ESM local (pas de CDN). -->

@@ -7,6 +7,4 @@ out/
 *.tsbuildinfo
 
 # TypeScript compiled output (client)
-client/main.js
-client/preload.js
-client/renderer.js
+client/*.js

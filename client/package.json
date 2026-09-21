@@ -10,11 +10,14 @@
   },
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=24.20.0"
+  },
   "dependencies": {
     "pixi.js": "^8.20.1"
   },
   "devDependencies": {
-    "@types/node": "^26.5.1",
+    "@types/node": "^24.13.5",
     "electron": "^44.4.1",
     "typescript": "^7.0.2"
   }

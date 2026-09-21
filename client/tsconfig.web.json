@@ -1,6 +1,7 @@
 {
   /**
-   * Configuration TypeScript du renderer (renderer.ts).
+   * Configuration TypeScript du renderer (renderer.ts, Menu.ts, Button.ts,
+   * design.ts).
    *
    * Ce fichier s'exécute dans le navigateur Chromium d'Electron en tant
    * qu'ES Module (balise <script type="module">) :
@@ -20,5 +21,5 @@
     "forceConsistentCasingInFileNames": true,
     "lib": ["ES2022", "DOM"]
   },
-  "include": ["renderer.ts"]
+  "include": ["renderer.ts", "Menu.ts", "Button.ts", "design.ts"]
 }
