@@ -35,7 +35,7 @@ const BUTTON_GAP = 64;
  * peut déplacer, mettre à l'échelle et afficher d'un seul bloc.
  */
 export class Menu extends Container {
-  constructor() {
+  constructor(onOptions: () => void) {
     super();
 
     // Décor de fond : la grille de l'arène, ajoutée en premier pour
@@ -68,8 +68,7 @@ export class Menu extends Container {
     // [texte, fonction] évite de répéter trois fois le même code.
     const entries: [string, () => void][] = [
       ['JOUER', () => console.log('[menu] Jouer')],
-      // L'écran Options arrive sur une branche dédiée : simple trace ici.
-      ['OPTIONS', () => console.log('[menu] Options (à venir)')],
+      ['OPTIONS', onOptions],
       ['QUITTER', () => window.close()],
     ];
     entries.forEach(([label, onClick], index) => {
