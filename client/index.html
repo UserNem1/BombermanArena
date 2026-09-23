@@ -3,7 +3,7 @@
   Page principale de l'application (renderer).
 
   Charge la librairie PixiJS via un import map, puis le script
-  renderer compilé (renderer.js) qui initialise le canvas de jeu.
+  renderer compilé (src/renderer.js) qui initialise le canvas de jeu.
   La Content-Security-Policy autorise l'exécution demandée par PixiJS
   ('unsafe-eval') et la création de workers (blob:) pour le rendu.
 -->
@@ -23,7 +23,7 @@
   <script type="importmap">
     { "imports": { "pixi.js": "./node_modules/pixi.js/dist/pixi.min.mjs" } }
   </script>
-  <!-- Point d'entrée du renderer (fichier compilé depuis renderer.ts). -->
-  <script type="module" src="renderer.js"></script>
+  <!-- Point d'entrée du renderer (fichier compilé depuis src/renderer.ts). -->
+  <script type="module" src="src/renderer.js"></script>
 </body>
 </html>

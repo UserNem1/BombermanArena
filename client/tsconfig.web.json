@@ -1,7 +1,9 @@
 {
   /**
-   * Configuration TypeScript du renderer (renderer.ts, Menu.ts, Button.ts,
-   * design.ts).
+   * Configuration TypeScript du renderer (sources regroupées dans src/ :
+   * renderer.ts, screens/Menu.ts, screens/Options.ts, components/Button.ts,
+   * components/Grid.ts, AnimationPersonnageMenu.ts, planche.ts, design.ts,
+   * Navigation.ts).
    *
    * Ce fichier s'exécute dans le navigateur Chromium d'Electron en tant
    * qu'ES Module (balise <script type="module">) :
@@ -9,7 +11,9 @@
    * - moduleResolution: "Bundler" résout correctement les types de pixi.js.
    * - lib: DOM fournit les types de window/document/canvas.
    *
-   * Le rendu est émis en .js à côté des sources .ts (fichiers ignorés par .gitignore).
+   * Le rendu est émis en .js à côté des sources .ts (fichiers ignorés par
+   * .gitignore). Les fichiers de tests (*.test.ts) sont compilés par Vitest,
+   * pas ici.
    */
   "compilerOptions": {
     "target": "ES2022",
@@ -21,5 +25,6 @@
     "forceConsistentCasingInFileNames": true,
     "lib": ["ES2022", "DOM"]
   },
-  "include": ["renderer.ts", "Menu.ts", "Button.ts", "design.ts"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["**/*.test.ts"]
 }

@@ -7,16 +7,21 @@
  * canvas PixiJS.
  */
 
-import { Container, Text, TextStyle } from 'pixi.js';
-import { Button } from './Button.js';
-import { DESIGN_HEIGHT, DESIGN_WIDTH } from './design.js';
+import { Container, Text } from 'pixi.js';
+import { Button } from '../components/Button.js';
+import {
+  DESIGN_HEIGHT,
+  DESIGN_WIDTH,
+  TITLE_Y,
+  titleStyle,
+} from '../design.js';
+import { Grid } from '../components/Grid.js';
 
 /** Couleurs du menu (0xRRGGBB). */
 const TITLE_COLOR = 0xffd166;
 const SUBTITLE_COLOR = 0x4cc9f0;
-
-/** Position verticale du titre, en fraction de la hauteur. */
-const TITLE_Y = 0.3;
+const TITLE_STROKE = '#4a1d00';
+const SUBTITLE_STROKE = '#0b2545';
 
 /** Décalage du sous-titre sous le titre (px). */
 const SUBTITLE_OFFSET = 58;
@@ -24,9 +29,6 @@ const SUBTITLE_OFFSET = 58;
 /** Ordonnée du premier bouton et espacement vertical (px). */
 const BUTTONS_Y = 0.56;
 const BUTTON_GAP = 64;
-
-/** Police d'affichage des titres. */
-const DISPLAY_FONT = '"Arial Black", Impact, Arial, sans-serif';
 
 /**
  * Un menu est un `Container` : un groupe d'objets graphiques que l'on
@@ -36,19 +38,15 @@ export class Menu extends Container {
   constructor() {
     super();
 
+    // Décor de fond : la grille de l'arène, ajoutée en premier pour
+    // rester derrière le titre et les boutons.
+    this.addChild(new Grid());
+
     // Titre principal. `Text` dessine du texte et `TextStyle` décrit son
     // apparence (police, taille, couleur, contour...).
     const title = new Text({
       text: 'BOMBERMAN',
-      style: new TextStyle({
-        fontFamily: DISPLAY_FONT,
-        fontSize: 64,
-        fontWeight: '900',
-        letterSpacing: 6,
-        fill: TITLE_COLOR,
-        stroke: { color: '#4a1d00', width: 7 },
-        padding: 10,
-      }),
+      style: titleStyle(TITLE_COLOR, 64, 6, TITLE_STROKE, 7),
     });
     // `anchor` place l'origine du texte en son centre : la position
     // indiquée correspond donc au centre du texte, pas à son coin.
@@ -58,15 +56,7 @@ export class Menu extends Container {
     // Sous-titre, centré sous le titre.
     const subtitle = new Text({
       text: 'ARENA',
-      style: new TextStyle({
-        fontFamily: DISPLAY_FONT,
-        fontSize: 34,
-        fontWeight: '900',
-        letterSpacing: 20,
-        fill: SUBTITLE_COLOR,
-        stroke: { color: '#0b2545', width: 5 },
-        padding: 10,
-      }),
+      style: titleStyle(SUBTITLE_COLOR, 34, 20, SUBTITLE_STROKE, 5),
     });
     subtitle.anchor.set(0.5);
     subtitle.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * TITLE_Y + SUBTITLE_OFFSET);
@@ -78,7 +68,8 @@ export class Menu extends Container {
     // [texte, fonction] évite de répéter trois fois le même code.
     const entries: [string, () => void][] = [
       ['JOUER', () => console.log('[menu] Jouer')],
-      ['OPTIONS', () => console.log('[menu] Options')],
+      // L'écran Options arrive sur une branche dédiée : simple trace ici.
+      ['OPTIONS', () => console.log('[menu] Options (à venir)')],
       ['QUITTER', () => window.close()],
     ];
     entries.forEach(([label, onClick], index) => {

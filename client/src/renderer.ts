@@ -1,18 +1,16 @@
 /**
  * Point d'entrée du renderer (couche d'affichage).
  *
- * Initialise l'application PixiJS (moteur de rendu de tous les écrans
- * du jeu) puis monte le menu principal. L'interface est dessinée dans
- * un espace de conception de 1280x720, mis à l'échelle et centré pour
+ * Initialise l'application PixiJS (moteur de rendu de tous les écrans du
+ * jeu) puis monte le menu principal. L'interface est dessinée dans un
+ * espace de conception de 1280x720, mis à l'échelle et centré pour
  * s'adapter à la fenêtre ; le fond uni est celui du canvas.
- *
- * Architecture visée : un Event Bus découplera plus tard la logique
- * réseau (WebSocket) de ce moteur de rendu.
  */
 
 import { Application } from 'pixi.js';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './design.js';
-import { Menu } from './Menu.js';
+import { Menu } from './screens/Menu.js';
+import { AnimationPersonnageMenu } from './AnimationPersonnageMenu.js';
 
 /** Application PixiJS : contient le renderer, le stage et la boucle de rendu. */
 const app = new Application();
@@ -39,6 +37,29 @@ document.body.appendChild(app.canvas);
 // ajouté est dessiné à l'écran. On y place le menu principal.
 const menu = new Menu();
 app.stage.addChild(menu);
+
+// Démonstration animée (test) : le personnage traverse l'écran, saute
+// puis disparaît, en boucle. Le sprite est inséré en dessous du texte
+// (index 1). La taille se règle dans AnimationPersonnageMenu.ts (DISPLAY_HEIGHT).
+// Un échec de chargement ne doit pas casser le menu entier : on
+// journalise l'erreur et on continue sans la démo.
+let demo: AnimationPersonnageMenu | null = null;
+try {
+  demo = await AnimationPersonnageMenu.load('assets/perso1.png');
+  menu.addChildAt(demo, 1);
+} catch (error) {
+  console.error('[renderer] chargement du perso impossible :', error);
+}
+
+// La boucle de rendu fait avancer la démonstration à chaque image. On
+// mesure le vrai temps écoulé (performance.now) plutôt que le delta du
+// ticker, pour une vitesse identique quel que soit le rafraîchissement.
+let lastTime = performance.now();
+app.ticker.add(() => {
+  const now = performance.now();
+  demo?.update((now - lastTime) / 1000);
+  lastTime = now;
+});
 
 /**
  * Met l'interface à l'échelle et la centre dans la fenêtre.
