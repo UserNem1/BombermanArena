@@ -2,7 +2,7 @@ class Bomb {
     constructor(x, y, timer, owner, explosionRadius) {
         this.x = x;
         this.y = y;
-        this.timer = timer; // in seconds
+        this.timer = timer; // secondes
         this.owner = owner;
         this.explosionRadius = explosionRadius;
     }
@@ -16,7 +16,6 @@ class Bomb {
 
     explode() {
         console.log(`Bomb exploded at (${this.x}, ${this.y}) with radius ${this.explosionRadius}`);
-        // explosion handling
     }
 }
 
