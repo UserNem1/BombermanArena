@@ -1,5 +1,5 @@
 class Player {
-    constructor(x = 0, y = 0, name = 'Player 1', health = 5) {
+    constructor(x = 1, y = 1, name = 'Player 1', health = 5) {
         this.x = x;
         this.y = y;
         this.name = name;
@@ -26,7 +26,7 @@ class Player {
                 this.x += 1;
                 break;
             default:
-            throw new Error('Direction invalide');
+                throw new Error('Direction invalide');
         }
     }
 }
