@@ -2,8 +2,9 @@
  * Tests de l'écran d'attente.
  *
  * PixiJS est mocké (Container/Graphics/Text/TextStyle minimaux) : on
- * vérifie la réaction de l'écran à la liste des joueurs — l'emplacement
- * occupé affiche le pseudo, l'emplacement libre reste « EN ATTENTE… ».
+ * vérifie la réaction de l'écran à la liste des joueurs — emplacements,
+ * état « prêt / pas prêt », marqueur du joueur local, compteur et
+ * déclenchement du bouton retour.
  */
 
 import { describe, expect, it, vi } from 'vitest';
@@ -52,7 +53,12 @@ vi.mock('pixi.js', () => {
     }
   }
   class Text {
-    anchor = { set(): void {} };
+    anchor = {
+      set(x: number, y: number = x): void {
+        this.x = x;
+        this.y = y;
+      },
+    };
     position = {
       x: 0,
       y: 0,
@@ -76,65 +82,84 @@ vi.mock('pixi.js', () => {
   return { Container, Graphics, Text, TextStyle };
 });
 
-/** Raccourci : libellés affichés dans les quatre emplacements. */
-const texts = (screen: WaitingMenu): string[] =>
-  screen.slotLabels.map((label: Text) => label.text);
+/** Raccourci : noms affichés dans les quatre emplacements. */
+const names = (screen: WaitingMenu): string[] =>
+  screen.slotNames.map((label: Text) => label.text);
 
-const alix: Player = { id: 'p1', name: 'Alix' };
-const basile: Player = { id: 'p2', name: 'Basile' };
-const camille: Player = { id: 'p3', name: 'Camille' };
+/** Raccourci : états affichés sous les quatre emplacements. */
+const statuses = (screen: WaitingMenu): string[] =>
+  screen.slotStatuses.map((label: Text) => label.text);
+
+const alix: Player = { id: 'p1', name: 'Alix', ready: false };
+const basile: Player = { id: 'p2', name: 'Basile', ready: false };
+const camille: Player = { id: 'p3', name: 'Camille', ready: false };
 
 describe('WaitingMenu', () => {
   it('affiche « EN ATTENTE… » dans les quatre emplacements au départ', () => {
-    const screen = new WaitingMenu(() => {});
-    expect(texts(screen)).toEqual([
+    const screen = new WaitingMenu(() => {}, () => {}, 'p1');
+    expect(names(screen)).toEqual([
       'EN ATTENTE…',
       'EN ATTENTE…',
       'EN ATTENTE…',
       'EN ATTENTE…',
     ]);
+    expect(statuses(screen)).toEqual(['', '', '', '']);
   });
 
-  it('remplit les emplacements avec les pseudos des joueurs présents', () => {
-    const screen = new WaitingMenu(() => {});
+  it('remplit les emplacements avec les pseudos et leurs états', () => {
+    const screen = new WaitingMenu(() => {}, () => {}, 'p1');
     screen.setPlayers([alix, basile, camille]);
-    expect(texts(screen)).toEqual(['Alix', 'Basile', 'Camille', 'EN ATTENTE…']);
-  });
-
-  it('redevient entièrement « EN ATTENTE… » si la salle se vide', () => {
-    const screen = new WaitingMenu(() => {});
-    screen.setPlayers([alix]);
-    screen.setPlayers([]);
-    expect(texts(screen)).toEqual([
-      'EN ATTENTE…',
-      'EN ATTENTE…',
-      'EN ATTENTE…',
-      'EN ATTENTE…',
+    expect(names(screen)).toEqual(['Alix · vous', 'Basile', 'Camille', 'EN ATTENTE…']);
+    expect(statuses(screen)).toEqual([
+      'PAS PRÊT',
+      'PAS PRÊT',
+      'PAS PRÊT',
+      '',
     ]);
   });
 
-  it('met en valeur visuelle un emplacement occupé (fill distinct)', () => {
-    const screen = new WaitingMenu(() => {});
-    screen.setPlayers([alix]);
-
-    const occupied = (screen.slotLabels[0] as Text).style as { fill: number };
-    const empty = (screen.slotLabels[1] as Text).style as { fill: number };
-    expect(occupied.fill).toBe(0xdfe4ff);
-    expect(empty.fill).toBe(0x8a8fb8);
+  it('marque le joueur local avec « · vous » seulement sur son emplacement', () => {
+    const screen = new WaitingMenu(() => {}, () => {}, 'p2');
+    screen.setPlayers([alix, basile]);
+    expect(names(screen).slice(0, 2)).toEqual(['Alix', 'Basile · vous']);
   });
 
-  it('ignore les joueurs au-delà du quatrième emplacement', () => {
-    const screen = new WaitingMenu(() => {});
-    const extra: Player = { id: 'p5', name: 'Enzo' };
-    screen.setPlayers([alix, basile, camille, extra, extra]);
-    expect(texts(screen)).toEqual(['Alix', 'Basile', 'Camille', 'Enzo']);
+  it('affiche PRÊT pour un joueur prêt et met à jour le compteur', () => {
+    const screen = new WaitingMenu(() => {}, () => {}, 'p1');
+    screen.setPlayers([{ ...alix, ready: true }, basile]);
+    expect(statuses(screen).slice(0, 2)).toEqual(['PRÊT', 'PAS PRÊT']);
+    expect((screen.summaryText as Text).text).toBe('1/2 prêts');
+  });
+
+  it('affiche « Tous les joueurs sont prêts ! » quand toute la salle est prête', () => {
+    const screen = new WaitingMenu(() => {}, () => {}, 'p1');
+    screen.setPlayers([
+      { ...alix, ready: true },
+      { ...basile, ready: true },
+    ]);
+    expect((screen.summaryText as Text).text).toBe('Tous les joueurs sont prêts !');
+  });
+
+  it('adapte le libellé du bouton prêt selon le joueur local', () => {
+    const screen = new WaitingMenu(() => {}, () => {}, 'p1');
+    screen.setPlayers([alix]);
+    expect(screen.readyButton.getLabel()).toBe('PRÊT');
+    screen.setPlayers([{ ...alix, ready: true }]);
+    expect(screen.readyButton.getLabel()).toBe('PAS PRÊT');
+  });
+
+  it('déclenche onToggleReady quand le bouton prêt est activé', () => {
+    const onToggle = vi.fn();
+    const screen = new WaitingMenu(() => {}, onToggle, 'p1');
+    (screen.readyButton as Button).activate();
+    expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
   it('déclenche onBack quand le bouton RETOUR est activé', () => {
     const onBack = vi.fn();
-    const screen = new WaitingMenu(onBack);
+    const screen = new WaitingMenu(onBack, () => {}, 'p1');
     const back = screen.children.find(
-      (child): child is Button => child instanceof Button,
+      (child): child is Button => child instanceof Button && child !== screen.readyButton,
     );
     expect(back).toBeDefined();
     back!.activate();

@@ -40,15 +40,21 @@ document.body.appendChild(app.canvas);
 // ajouté est dessiné à l'écran. Les deux écrans sont créés à l'avance, puis
 // un seul est monté sur la scène à la fois (le menu au départ).
 const menu = new Menu(showWaiting);
-const waiting = new WaitingMenu(showMenu);
 
 // Salle d'attente : le bus d'événements joue les intermédiaires entre le
 // serveur (réel ou simulé) et l'écran. Tant que le backend WebSocket n'a
 // pas défini le protocole, un mock alimente le bus avec de fausses données
-// : on peut ainsi voir la salle se remplir sans serveur.
+// : on peut ainsi voir la salle se remplir et basculer « prêt » sans serveur.
 const lobby = new LobbyBus();
 const mock = new LobbyMock(lobby, ['KillerBee', 'Bonnie', 'TNT', 'Pixel'], 900);
+const waiting = new WaitingMenu(showMenu, toggleReady, mock.selfId);
 lobby.on((players) => waiting.setPlayers(players));
+
+/** Bascule l'état prêt du joueur local dans le bus. */
+function toggleReady(): void {
+  const self = lobby.players.find((p) => p.id === mock.selfId);
+  lobby.setReady(mock.selfId, !self?.ready);
+}
 
 /** Écran actuellement affiché (menu ou salle d'attente). */
 let current: Container = menu;
