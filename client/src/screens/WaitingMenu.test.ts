@@ -8,6 +8,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { Text } from 'pixi.js';
+import { Button } from '../components/Button.js';
 import { WaitingMenu } from './WaitingMenu.js';
 import type { Player } from '../lobby/LobbyBus.js';
 
@@ -127,5 +128,16 @@ describe('WaitingMenu', () => {
     const extra: Player = { id: 'p5', name: 'Enzo' };
     screen.setPlayers([alix, basile, camille, extra, extra]);
     expect(texts(screen)).toEqual(['Alix', 'Basile', 'Camille', 'Enzo']);
+  });
+
+  it('déclenche onBack quand le bouton RETOUR est activé', () => {
+    const onBack = vi.fn();
+    const screen = new WaitingMenu(onBack);
+    const back = screen.children.find(
+      (child): child is Button => child instanceof Button,
+    );
+    expect(back).toBeDefined();
+    back!.activate();
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 });
