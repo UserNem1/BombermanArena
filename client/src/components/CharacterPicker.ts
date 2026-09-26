@@ -3,19 +3,16 @@
  *
  * Une « U » (cadre carré ouvert en haut) posée dans l'angle supérieur
  * gauche de l'emplacement du joueur local : on clique dessus pour changer
- * de personnage. À l'intérieur apparaît l'image du perso (la planche entière
- * fournie par le renderer, pré-mise à l'échelle) ou, à défaut d'image,
- * une pastille de sa couleur. Le parent choisit le perso suivant (logique
- * réseau) via le callback `onPick`.
+ * de personnage. À l'intérieur apparaît la première pose du perso (image
+ * pré-mise à l'échelle par le renderer) ; sans image, la U reste vide. Le
+ * parent choisit le perso suivant (logique réseau) via le callback
+ * `onPick`.
  *
- * Le cadre est statique (dessiné une fois) : seuls l'image/la pastille
- * changent. Quand l'image est fournie, elle est ajoutée comme enfant et la
- * pastille de repli est retirée ; sans personnage connu, le cadre reste
- * vide.
+ * Le cadre est statique (dessiné une fois) : seule l'image change.
  */
 
 import { Container, Graphics } from 'pixi.js';
-import { COLORS, fillDisc } from '../design.js';
+import { COLORS } from '../design.js';
 import type { Character } from '../lobby/characters.js';
 
 /** Dimensions du cadre en U (px), exposées pour le positionnement. */
@@ -29,15 +26,11 @@ export const PICKER_PREVIEW_HEIGHT = 100;
 const CORNER_RADIUS = 8;
 const BORDER_WIDTH = 5;
 
-/** Pastille de repli (sans image) : rayon et position (px). */
-const FALLBACK_RADIUS = 18;
-
 export class CharacterPicker extends Container {
   private readonly gfx = new Graphics();
   private readonly onPick: () => void;
   private character_: Character | null;
   private preview: Container | null = null;
-  private fallback: Graphics | null = null;
 
   constructor(character: Character | null, onPick: () => void) {
     super();
@@ -64,7 +57,6 @@ export class CharacterPicker extends Container {
 
     this.on('pointertap', () => this.onPick());
     this.addChild(this.gfx);
-    this.renderFallback();
   }
 
   /** Personnage affiché (ou `null` si inconnu), exposé pour les tests. */
@@ -72,15 +64,14 @@ export class CharacterPicker extends Container {
     return this.character_;
   }
 
-  /** Change le personnage affiché (pastille de repli si pas d'image). */
+  /** Change le personnage affiché. */
   setCharacter(character: Character | null): void {
     this.character_ = character;
-    this.renderFallback();
   }
 
   /**
-   * Affiche l'image du personnage (fournie pré-mise à l'échelle par le
-   * renderer) ; `null` restaure la pastille de repli.
+   * Affiche l'image du personnage (première pose, fournie pré-mise à
+   * l'échelle par le renderer) ; `null` vide la U.
    */
   setPreview(preview: Container | null): void {
     if (this.preview) {
@@ -90,27 +81,10 @@ export class CharacterPicker extends Container {
     if (preview) {
       this.addChild(preview);
     }
-    this.renderFallback();
   }
 
   /** Déclenche le changement de personnage (appelé par le parent). */
   activate(): void {
     this.onPick();
-  }
-
-  /** Montre la pastille de repli seulement quand aucune image n'est là. */
-  private renderFallback(): void {
-    if (this.preview) {
-      if (this.fallback) {
-        this.removeChild(this.fallback);
-        this.fallback = null;
-      }
-      return;
-    }
-    if (!this.character_ || this.fallback) {
-      return;
-    }
-    this.fallback = fillDisc(new Graphics(), FALLBACK_RADIUS, this.character_.color);
-    this.addChild(this.fallback);
   }
 }

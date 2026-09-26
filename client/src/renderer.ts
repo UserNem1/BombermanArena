@@ -7,7 +7,14 @@
  * s'adapter à la fenêtre ; le fond uni est celui du canvas.
  */
 
-import { Application, Container, Sprite, Texture, TextureSource } from 'pixi.js';
+import {
+  Application,
+  Container,
+  Rectangle,
+  Sprite,
+  Texture,
+  TextureSource,
+} from 'pixi.js';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './design.js';
 import { Menu } from './screens/Menu.js';
 import { WaitingMenu } from './screens/WaitingMenu.js';
@@ -16,6 +23,7 @@ import { CHARACTERS } from './lobby/characters.js';
 import { LobbyBus } from './lobby/LobbyBus.js';
 import { LobbyMock } from './lobby/LobbyMock.js';
 import { loadImage } from './imageLoader.js';
+import { firstCellBox } from './firstCell.js';
 import { PICKER_PREVIEW_HEIGHT } from './components/CharacterPicker.js';
 
 /** Application PixiJS : contient le renderer, le stage et la boucle de rendu. */
@@ -86,10 +94,11 @@ function cycleCharacter(): void {
 }
 
 /**
- * Aperçus des personnages pour le sélecteur en U : l'image de chaque
- * planche, chargée en arrière-plan et réduite à la hauteur du sélecteur.
- * Un chargement raté n'affiche que la pastille de couleur (jamais de
- * blocage) ; la salle est rafraîchie une fois qu'une image est prête.
+ * Aperçus des personnages pour le sélecteur en U : la première pose de
+ * chaque planche (rognée sur son contenu), chargée en arrière-plan et
+ * réduite à la hauteur du sélecteur. Un chargement raté laisse la U vide
+ * (jamais de blocage) ; la salle est rafraîchie une fois qu'une image est
+ * prête.
  */
 const previews = new Map<string, Sprite>();
 void loadPreviews();
@@ -98,10 +107,19 @@ async function loadPreviews(): Promise<void> {
   for (const character of CHARACTERS) {
     try {
       const image = await loadImage(character.sprites);
-      const sprite = new Sprite({ texture: new Texture({ source: TextureSource.from(image) }) });
+      // Seule la première pose est prélevée (les premières lignes de la
+      // planche peuvent être vides) : le portrait n'est pas une planche
+      // écrasée mais une case rognée sur son contenu.
+      const box = firstCellBox(image);
+      const sprite = new Sprite({
+        texture: new Texture({
+          source: TextureSource.from(image),
+          frame: new Rectangle(box.x, box.y, box.width, box.height),
+        }),
+      });
       sprite.anchor.set(0.5);
       sprite.height = PICKER_PREVIEW_HEIGHT;
-      sprite.width = (sprite.height * image.width) / image.height;
+      sprite.width = (sprite.height * box.width) / box.height;
       previews.set(character.id, sprite);
     } catch (error) {
       console.error(`[renderer] image du perso ${character.id} illisible :`, error);
