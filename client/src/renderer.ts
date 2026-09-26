@@ -12,6 +12,8 @@ import { DESIGN_HEIGHT, DESIGN_WIDTH } from './design.js';
 import { Menu } from './screens/Menu.js';
 import { WaitingMenu } from './screens/WaitingMenu.js';
 import { AnimationPersonnageMenu } from './AnimationPersonnageMenu.js';
+import { LobbyBus } from './lobby/LobbyBus.js';
+import { LobbyMock } from './lobby/LobbyMock.js';
 
 /** Application PixiJS : contient le renderer, le stage et la boucle de rendu. */
 const app = new Application();
@@ -40,6 +42,14 @@ document.body.appendChild(app.canvas);
 const menu = new Menu(showWaiting);
 const waiting = new WaitingMenu(showMenu);
 
+// Salle d'attente : le bus d'événements joue les intermédiaires entre le
+// serveur (réel ou simulé) et l'écran. Tant que le backend WebSocket n'a
+// pas défini le protocole, un mock alimente le bus avec de fausses données
+// : on peut ainsi voir la salle se remplir sans serveur.
+const lobby = new LobbyBus();
+const mock = new LobbyMock(lobby, ['KillerBee', 'Bonnie', 'TNT', 'Pixel'], 900);
+lobby.on((players) => waiting.setPlayers(players));
+
 /** Écran actuellement affiché (menu ou salle d'attente). */
 let current: Container = menu;
 app.stage.addChild(current);
@@ -54,14 +64,16 @@ const showScreen = (next: Container): void => {
   layout();
 };
 
-/** Bascule vers la salle d'attente (bouton JOUER). */
+/** Bascule vers la salle d'attente (bouton JOUER) et lance la simulation. */
 function showWaiting(): void {
   showScreen(waiting);
+  mock.start();
 }
 
-/** Bascule vers le menu principal. */
+/** Bascule vers le menu principal et interrompt la simulation en cours. */
 function showMenu(): void {
   showScreen(menu);
+  mock.stop();
 }
 
 // Démonstration animée (test) : le personnage traverse l'écran, saute

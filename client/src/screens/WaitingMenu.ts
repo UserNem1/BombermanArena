@@ -1,10 +1,12 @@
 /**
  * Écran d'attente (salle multijoueur).
  *
- * Version très minimale : le même fond que le menu (grille), un titre et
- * quatre rectangles dans les coins — un emplacement par joueur. Le bouton
- * « Retour » ramène au menu. Les joueurs réels, l'animation et le compte
- * à rebours viendront ensuite.
+ * Fond identique au menu (grille), un titre et quatre rectangles dans les
+ * coins — un emplacement par joueur. `setPlayers` reflète l'état de la
+ * salle : un emplacement occupé affiche le pseudo du joueur, un emplacement
+ * libre affiche « EN ATTENTE… ». Le bouton « Retour » ramène au menu.
+ * L'écran est volontairement sans logique : c'est le bus d'événements du
+ * lobby qui lui envoie la liste des joueurs.
  */
 
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
@@ -16,6 +18,7 @@ import {
   titleStyle,
 } from '../design.js';
 import { Grid } from '../components/Grid.js';
+import type { Player } from '../lobby/LobbyBus.js';
 
 /** Couleur du titre de la page. */
 const TITLE_COLOR = 0x4cc9f0;
@@ -25,8 +28,17 @@ const TITLE_STROKE = '#0b2545';
 const SLOT_COLOR = 0x2b2f4a;
 const SLOT_BORDER = 0x6c63a8;
 
-/** Style du libellé dans un emplacement. */
-const SLOT_LABEL_STYLE = new TextStyle({
+/** Libellés affichés dans les emplacements. */
+const EMPTY_LABEL = 'EN ATTENTE…';
+
+/** Styles des libellés des emplacements. */
+const SLOT_EMPTY_STYLE = new TextStyle({
+  fontFamily: 'Arial',
+  fontSize: 22,
+  fontWeight: 'bold',
+  fill: 0x8a8fb8,
+});
+const SLOT_OCCUPIED_STYLE = new TextStyle({
   fontFamily: 'Arial',
   fontSize: 22,
   fontWeight: 'bold',
@@ -41,15 +53,18 @@ const SLOT_MARGIN = 90;
 /** Ordonnée du bouton retour, en fraction de la hauteur. */
 const BACK_Y = 0.9;
 
-/** Emplacements des quatre joueurs : [x, y, libellé]. */
-const PLAYER_SLOTS: [number, number, string][] = [
-  [SLOT_MARGIN, SLOT_MARGIN, 'JOUEUR 1'],
-  [DESIGN_WIDTH - SLOT_MARGIN - SLOT_WIDTH, SLOT_MARGIN, 'JOUEUR 2'],
-  [SLOT_MARGIN, DESIGN_HEIGHT - SLOT_MARGIN - SLOT_HEIGHT, 'JOUEUR 3'],
-  [DESIGN_WIDTH - SLOT_MARGIN - SLOT_WIDTH, DESIGN_HEIGHT - SLOT_MARGIN - SLOT_HEIGHT, 'JOUEUR 4'],
+/** Coin (x, y) de chaque emplacement de joueur. */
+const PLAYER_SLOTS: [number, number][] = [
+  [SLOT_MARGIN, SLOT_MARGIN],
+  [DESIGN_WIDTH - SLOT_MARGIN - SLOT_WIDTH, SLOT_MARGIN],
+  [SLOT_MARGIN, DESIGN_HEIGHT - SLOT_MARGIN - SLOT_HEIGHT],
+  [DESIGN_WIDTH - SLOT_MARGIN - SLOT_WIDTH, DESIGN_HEIGHT - SLOT_MARGIN - SLOT_HEIGHT],
 ];
 
 export class WaitingMenu extends Container {
+  /** Libellés des quatre emplacements (exposés pour les tests). */
+  readonly slotLabels: Text[] = [];
+
   constructor(onBack: () => void) {
     super();
 
@@ -66,11 +81,12 @@ export class WaitingMenu extends Container {
     }
     this.addChild(gfx);
 
-    // Libellé au centre de chaque emplacement.
-    for (const [x, y, label] of PLAYER_SLOTS) {
-      const text = new Text({ text: label, style: SLOT_LABEL_STYLE });
+    // Libellé au centre de chaque emplacement, vide au départ.
+    for (const [x, y] of PLAYER_SLOTS) {
+      const text = new Text({ text: EMPTY_LABEL, style: SLOT_EMPTY_STYLE });
       text.anchor.set(0.5);
       text.position.set(x + SLOT_WIDTH / 2, y + SLOT_HEIGHT / 2);
+      this.slotLabels.push(text);
       this.addChild(text);
     }
 
@@ -87,5 +103,19 @@ export class WaitingMenu extends Container {
     const back = new Button('RETOUR', onBack);
     back.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * BACK_Y);
     this.addChild(back);
+  }
+
+  /**
+   * Reflète la liste des joueurs de la salle dans les emplacements.
+   *
+   * Les `MAX_PLAYERS` premiers joueurs occupent les coins, dans l'ordre ;
+   * les emplacements restants restent affichés « EN ATTENTE… ».
+   */
+  setPlayers(players: readonly Player[]): void {
+    this.slotLabels.forEach((label, index) => {
+      const player = players[index];
+      label.text = player ? player.name : EMPTY_LABEL;
+      label.style = player ? SLOT_OCCUPIED_STYLE : SLOT_EMPTY_STYLE;
+    });
   }
 }
