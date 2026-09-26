@@ -8,6 +8,7 @@
  */
 
 import { LobbyBus, MAX_PLAYERS, type Player } from './LobbyBus.js';
+import { CHARACTERS } from './characters.js';
 
 export class LobbyMock {
   private readonly bus: LobbyBus;
@@ -74,8 +75,14 @@ export class LobbyMock {
     this.started_ = false;
   }
 
-  /** Construit un joueur simulé, identifiable par sa position d'arrivée. */
+  /** Construit un joueur simulé : chaque arrivée prend le personnage
+   *  suivant du catalogue (couleurs toutes différentes). */
   private makePlayer(name: string, index: number): Player {
-    return { id: `mock-${index + 1}`, name, ready: false };
+    return {
+      id: `mock-${index + 1}`,
+      name,
+      characterId: CHARACTERS[index % CHARACTERS.length].id,
+      ready: false,
+    };
   }
 }

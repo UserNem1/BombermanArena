@@ -47,13 +47,18 @@ const menu = new Menu(showWaiting);
 // : on peut ainsi voir la salle se remplir et basculer « prêt » sans serveur.
 const lobby = new LobbyBus();
 const mock = new LobbyMock(lobby, ['KillerBee', 'Bonnie', 'TNT', 'Pixel'], 900);
-const waiting = new WaitingMenu(showMenu, toggleReady, mock.selfId);
+const waiting = new WaitingMenu(showMenu, toggleReady, selectCharacter, mock.selfId);
 lobby.on((players) => waiting.setPlayers(players));
 
 /** Bascule l'état prêt du joueur local dans le bus. */
 function toggleReady(): void {
   const self = lobby.players.find((p) => p.id === mock.selfId);
   lobby.setReady(mock.selfId, !self?.ready);
+}
+
+/** Choisit un personnage pour le joueur local (refusé si déjà pris). */
+function selectCharacter(characterId: string): void {
+  lobby.setCharacter(mock.selfId, characterId);
 }
 
 /** Écran actuellement affiché (menu ou salle d'attente). */

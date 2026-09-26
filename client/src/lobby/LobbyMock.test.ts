@@ -96,4 +96,16 @@ describe('LobbyMock', () => {
 
     expect(bus.players.every((p) => p.ready === false)).toBe(true);
   });
+
+  it('attribue un personnage distinct à chaque arrivée', () => {
+    const bus = new LobbyBus();
+    const mock = new LobbyMock(bus, ['Alix', 'Basile'], 100);
+    mock.start();
+    vi.advanceTimersByTime(1000);
+
+    const ids = bus.players.map((p) => p.characterId);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(bus.players[0].characterId).toBe('perso-1');
+    expect(bus.players[1].characterId).toBe('perso-2');
+  });
 });

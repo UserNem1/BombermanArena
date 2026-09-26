@@ -9,12 +9,16 @@
  * JSON) sera défini par le pôle backend ; ce bus est prêt à le consommer.
  */
 
+import { CHARACTERS } from './characters.js';
+
 /** Un joueur présent dans la salle d'attente. */
 export interface Player {
   /** Identifiant unique fourni par le serveur. */
   readonly id: string;
   /** Pseudo affiché dans la salle. */
   readonly name: string;
+  /** Personnage choisi (id du catalogue) : un seul joueur par personnage. */
+  readonly characterId: string;
   /** Vrai si le joueur s'est déclaré prêt à commencer. */
   readonly ready: boolean;
 }
@@ -25,10 +29,12 @@ export type PlayersListener = (players: readonly Player[]) => void;
 /** Nombre maximum de joueurs dans une partie (règle du jeu : 2 à 4). */
 export const MAX_PLAYERS = 4;
 
-/** Joueur stocké en interne : seul `ready` est mutable (état évolutif). */
+/** Joueur stocké en interne : seul `ready` et `characterId` sont mutables
+ *  (états évolutifs). */
 type StoredPlayer = {
   id: string;
   name: string;
+  characterId: string;
   ready: boolean;
 };
 
@@ -58,17 +64,29 @@ export class LobbyBus {
   /**
    * Signale l'arrivée d'un joueur dans la salle.
    *
-   * Un joueur identifié par le même `id` ne peut pas entrer deux fois :
-   * la demande est alors ignorée. Le joueur arrive « pas prêt » par défaut
-   * (`ready` absent du message = faux).
+   * Un joueur identifié par le même `id` ne peut pas entrer deux fois, et
+   * un joueur ne peut pas entrer avec un personnage déjà pris (un seul
+   * joueur par perso) : la demande est alors ignorée. Sans personnage
+   * précisé, le premier libre (dans l'ordre du catalogue) est attribué.
+   * Le joueur arrive « pas prêt » par défaut (`ready` absent = faux).
    */
   join(player: Player): void {
     if (this.players_.some((p) => p.id === player.id)) {
       return;
     }
+
+    let characterId: string | undefined = player.characterId;
+    if (!characterId) {
+      characterId = this.nextFreeCharacter();
+    }
+    if (!characterId || this.isTaken(characterId)) {
+      return;
+    }
+
     this.players_.push({
       id: player.id,
       name: player.name,
+      characterId,
       ready: player.ready ?? false,
     });
     this.notify();
@@ -95,6 +113,37 @@ export class LobbyBus {
     }
     player.ready = ready;
     this.notify();
+  }
+
+  /**
+   * Change le personnage d'un joueur.
+   *
+   * Règle d'unicité : un personnage déjà porté par un autre joueur est
+   * refusé (aucun effet). Ne notifie pas si le joueur est inconnu ou si le
+   * personnage demandé est déjà le sien.
+   *
+   * @returns Vrai si le changement a été appliqué.
+   */
+  setCharacter(playerId: string, characterId: string): boolean {
+    const player = this.players_.find((p) => p.id === playerId);
+    if (!player || player.characterId === characterId || this.isTaken(characterId, playerId)) {
+      return false;
+    }
+    player.characterId = characterId;
+    this.notify();
+    return true;
+  }
+
+  /** Vrai si le personnage est porté par un joueur présent (hors `exceptId`). */
+  private isTaken(characterId: string, exceptId?: string): boolean {
+    return this.players_.some(
+      (p) => p.id !== exceptId && p.characterId === characterId,
+    );
+  }
+
+  /** Premier personnage du catalogue non encore pris (ordre du roster). */
+  private nextFreeCharacter(): string | undefined {
+    return CHARACTERS.find((c) => !this.isTaken(c.id))?.id;
   }
 
   /** Prévient tous les abonnés de l'état courant (liste copiée). */

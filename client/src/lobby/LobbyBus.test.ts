@@ -10,9 +10,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MAX_PLAYERS, LobbyBus, type Player } from './LobbyBus.js';
 
-/** Joueuse de test. */
-const alix: Player = { id: 'p1', name: 'Alix', ready: false };
-const basile: Player = { id: 'p2', name: 'Basile', ready: false };
+/** Joueuses de test, chacune sur son personnage (couleurs distinctes). */
+const alix: Player = { id: 'p1', name: 'Alix', characterId: 'perso-1', ready: false };
+const basile: Player = { id: 'p2', name: 'Basile', characterId: 'perso-2', ready: false };
 
 describe('LobbyBus', () => {
   it('démarre avec une salle vide', () => {
@@ -93,13 +93,76 @@ describe('LobbyBus', () => {
     expect(bus.players).toEqual([alix]);
   });
 
-  it('fait arriver un joueur non prêt par défaut', () => {
+  it('fait arriver un joueur non prêt par défaut et sans perso', () => {
     const bus = new LobbyBus();
     const sansEtat = { id: 'p9', name: 'Sans état' } as Player;
 
     bus.join(sansEtat);
 
     expect(bus.players[0].ready).toBe(false);
+    // Premier personnage libre du catalogue attribué automatiquement.
+    expect(bus.players[0].characterId).toBe('perso-1');
+  });
+
+  it('refuse un joueur dont le personnage est déjà pris', () => {
+    const bus = new LobbyBus();
+    const listener = vi.fn();
+    bus.on(listener);
+    bus.join(alix);
+
+    bus.join({ ...basile, characterId: 'perso-1' });
+
+    expect(bus.players).toEqual([alix]);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('attribue un personnage libre à un arrivant qui n’en précise pas', () => {
+    const bus = new LobbyBus();
+    bus.join(alix); // perso-1 occupé
+
+    bus.join({ id: 'p2', name: 'Basile', ready: false } as Player);
+
+    expect(bus.players[1].characterId).toBe('perso-2');
+  });
+
+  it('change le personnage d’un joueur et prévient les abonnés', () => {
+    const bus = new LobbyBus();
+    bus.join(alix);
+    bus.join(basile);
+    const listener = vi.fn();
+    bus.on(listener);
+
+    const ok = bus.setCharacter(alix.id, 'perso-3');
+
+    expect(ok).toBe(true);
+    expect(bus.players[0].characterId).toBe('perso-3');
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuse un personnage déjà porté par un autre joueur', () => {
+    const bus = new LobbyBus();
+    bus.join(alix);
+    bus.join(basile);
+    const listener = vi.fn();
+    bus.on(listener);
+
+    const ok = bus.setCharacter(alix.id, 'perso-2');
+
+    expect(ok).toBe(false);
+    expect(bus.players[0].characterId).toBe('perso-1');
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('ignore un changement de perso pour un joueur inconnu ou inchangé', () => {
+    const bus = new LobbyBus();
+    bus.join(alix);
+    const listener = vi.fn();
+    bus.on(listener);
+
+    expect(bus.setCharacter('inconnu', 'perso-2')).toBe(false);
+    expect(bus.setCharacter(alix.id, 'perso-1')).toBe(false);
+
+    expect(listener).not.toHaveBeenCalled();
   });
 
   it('marque un joueur prêt et prévient les abonnés', () => {

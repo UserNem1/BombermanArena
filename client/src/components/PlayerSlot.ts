@@ -13,6 +13,7 @@
 
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { COLORS } from '../design.js';
+import { getCharacter } from '../lobby/characters.js';
 import type { Player } from '../lobby/LobbyBus.js';
 
 /** Dimensions d'un emplacement (px), exposées pour le placement en coins. */
@@ -22,6 +23,10 @@ export const SLOT_HEIGHT = 220;
 /** Décrochages verticaux du pseudo et de l'état depuis le centre (px). */
 const NAME_OFFSET = -18;
 const STATUS_OFFSET = 26;
+
+/** Pastille de couleur du personnage (à gauche du pseudo). */
+const AVATAR_RADIUS = 16;
+const AVATAR_X = -72;
 
 /** Libellés et marqueur du joueur local. */
 const EMPTY_LABEL = 'EN ATTENTE…';
@@ -58,6 +63,8 @@ export class PlayerSlot extends Container {
   readonly nameText: Text;
   /** État affiché (ou vide), exposé pour les tests. */
   readonly statusText: Text;
+  /** Pastille de couleur du personnage du joueur (masquée si vide). */
+  readonly avatar: Graphics;
 
   constructor() {
     super();
@@ -69,6 +76,11 @@ export class PlayerSlot extends Container {
       .fill(COLORS.panel)
       .stroke({ width: 2, color: COLORS.border });
 
+    // Pastille de la couleur du personnage du joueur.
+    this.avatar = new Graphics();
+    this.avatar.position.set(AVATAR_X, NAME_OFFSET);
+    this.avatar.visible = false;
+
     this.nameText = new Text({ text: EMPTY_LABEL, style: NAME_STYLE });
     this.nameText.anchor.set(0.5);
     this.nameText.position.set(0, NAME_OFFSET);
@@ -77,7 +89,7 @@ export class PlayerSlot extends Container {
     this.statusText.anchor.set(0.5);
     this.statusText.position.set(0, STATUS_OFFSET);
 
-    this.addChild(gfx, this.nameText, this.statusText);
+    this.addChild(gfx, this.avatar, this.nameText, this.statusText);
   }
 
   /**
@@ -90,11 +102,25 @@ export class PlayerSlot extends Container {
     if (!player) {
       this.nameText.text = EMPTY_LABEL;
       this.statusText.text = '';
+      this.avatar.visible = false;
       return;
     }
 
     this.nameText.text = isSelf ? `${player.name}${SELF_SUFFIX}` : player.name;
     this.statusText.text = player.ready ? READY_LABEL : NOT_READY_LABEL;
     this.statusText.style = player.ready ? READY_STYLE : NOT_READY_STYLE;
+
+    // Pastille de la couleur du personnage (les joueurs sans perso connu
+    // n'en ont pas : rendu neutre).
+    const character = getCharacter(player.characterId);
+    if (character) {
+      this.avatar.clear();
+      this.avatar
+        .circle(0, 0, AVATAR_RADIUS)
+        .fill(character.color);
+      this.avatar.visible = true;
+    } else {
+      this.avatar.visible = false;
+    }
   }
 }

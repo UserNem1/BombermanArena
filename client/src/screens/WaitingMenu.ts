@@ -14,6 +14,7 @@
 
 import { Container, Text, TextStyle } from 'pixi.js';
 import { Button } from '../components/Button.js';
+import { CharacterCard } from '../components/CharacterCard.js';
 import { PlayerSlot, SLOT_HEIGHT, SLOT_WIDTH } from '../components/PlayerSlot.js';
 import {
   COLORS,
@@ -23,6 +24,7 @@ import {
   createCenteredTitle,
 } from '../design.js';
 import { Grid } from '../components/Grid.js';
+import { CHARACTERS } from '../lobby/characters.js';
 import type { Player } from '../lobby/LobbyBus.js';
 
 /** Couleur du titre de la page. */
@@ -47,10 +49,15 @@ const SUMMARY_READY_STYLE = new TextStyle({
 /** Marge des emplacements aux bords de l'écran (px). */
 const SLOT_MARGIN = 90;
 
-/** Ordonnées (fractions de hauteur) de la synthèse, du bouton, du retour. */
-const SUMMARY_Y = 0.71;
-const TOGGLE_Y = 0.78;
-const BACK_Y = 0.9;
+/** Largeur d'une carte de personnage et espacement (px). */
+export const CARD_WIDTH = 110;
+const CARD_GAP = 10;
+
+/** Ordonnées (fractions de hauteur) : sélecteur, synthèse, boutons. */
+const SELECTOR_Y = 0.48;
+const SUMMARY_Y = 0.64;
+const TOGGLE_Y = 0.83;
+const BACK_Y = 0.93;
 
 /** Centre (x, y) de chacun des quatre emplacements de joueur. */
 const SLOTS_CENTER: [number, number][] = [
@@ -63,6 +70,10 @@ const SLOTS_CENTER: [number, number][] = [
   ],
 ];
 
+/** Sélecteur de personnages centré, une carte par perso du catalogue. */
+const SELECTOR_X0 = (DESIGN_WIDTH - CHARACTERS.length * CARD_WIDTH
+  - (CHARACTERS.length - 1) * CARD_GAP) / 2;
+
 /** Message affiché quand toute la salle est prête. */
 const ALL_READY_MESSAGE = 'Tous les joueurs sont prêts !';
 /** Libellés du bouton de bascule. */
@@ -72,6 +83,8 @@ const NOT_READY_LABEL = 'PAS PRÊT';
 export class WaitingMenu extends Container {
   /** Emplacements des joueurs, exposés pour les tests. */
   readonly slots: PlayerSlot[] = [];
+  /** Cartes de sélection des personnages, exposées pour les tests. */
+  readonly characterCards: CharacterCard[] = [];
   /** Bouton « Prêt / Pas prêt ». */
   readonly readyButton: Button;
   /** Texte de synthèse (compteur / tous prêts). */
@@ -82,6 +95,7 @@ export class WaitingMenu extends Container {
   constructor(
     onBack: () => void,
     onToggleReady: () => void,
+    onSelectCharacter: (characterId: string) => void,
     selfId: string,
   ) {
     super();
@@ -109,6 +123,15 @@ export class WaitingMenu extends Container {
       }),
     );
 
+    // Sélecteur de personnages : une carte par perso du catalogue (le
+    // roster peut grandir sans toucher à l'écran).
+    CHARACTERS.forEach((character, index) => {
+      const card = new CharacterCard(character, () => onSelectCharacter(character.id));
+      card.position.set(SELECTOR_X0 + index * (CARD_WIDTH + CARD_GAP), DESIGN_HEIGHT * SELECTOR_Y);
+      this.characterCards.push(card);
+      this.addChild(card);
+    });
+
     // Synthèse : « X/Y prêts », puis « Tous les joueurs sont prêts ! ».
     this.summaryText = new Text({ text: '', style: SUMMARY_STYLE });
     this.summaryText.anchor.set(0.5);
@@ -131,11 +154,17 @@ export class WaitingMenu extends Container {
    *
    * Les premiers joueurs occupent les coins, dans l'ordre ; les
    * emplacements restants restent « EN ATTENTE… ». Met aussi à jour la
-   * synthèse « prêts / tous prêts » et le libellé du bouton.
+   * synthèse « prêts / tous prêts », le libellé du bouton et les états
+   * des cartes de personnages (choisi, pris, libre).
    */
   setPlayers(players: readonly Player[]): void {
     this.slots.forEach((slot, index) => {
       slot.setPlayer(players[index], players[index]?.id === this.selfId);
+    });
+    this.characterCards.forEach((card) => {
+      const owner = players.find((p) => p.characterId === card.character.id);
+      card.setSelected(owner?.id === this.selfId);
+      card.setTaken(owner !== undefined && owner.id !== this.selfId);
     });
     this.refreshSummary(players);
   }
