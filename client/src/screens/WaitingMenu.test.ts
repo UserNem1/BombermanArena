@@ -84,11 +84,11 @@ vi.mock('pixi.js', () => {
 
 /** Raccourci : noms affichés dans les quatre emplacements. */
 const names = (screen: WaitingMenu): string[] =>
-  screen.slotNames.map((label: Text) => label.text);
+  screen.slots.map((slot) => slot.nameText.text);
 
 /** Raccourci : états affichés sous les quatre emplacements. */
 const statuses = (screen: WaitingMenu): string[] =>
-  screen.slotStatuses.map((label: Text) => label.text);
+  screen.slots.map((slot) => slot.statusText.text);
 
 const alix: Player = { id: 'p1', name: 'Alix', ready: false };
 const basile: Player = { id: 'p2', name: 'Basile', ready: false };

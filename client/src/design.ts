@@ -19,6 +19,28 @@ export const DESIGN_HEIGHT = 720;
 /** Police d'affichage des titres (partagée par tous les écrans). */
 export const DISPLAY_FONT = '"Arial Black", Impact, Arial, sans-serif';
 
+/** Palette partagée de l'interface (couleurs 0xRRGGBB). */
+export const COLORS = {
+  /** Fond des panneaux (boutons, emplacements joueur). */
+  panel: 0x2b2f4a,
+  /** Bordure des panneaux. */
+  border: 0x6c63a8,
+  /** Texte clair (noms, libellés). */
+  text: 0xdfe4ff,
+  /** Texte secondaire (état « pas prêt », emplacement vide). */
+  muted: 0x8a8fb8,
+  /** Accent principal (titres d'écran, sous-titre du menu). */
+  accent: 0x4cc9f0,
+  /** Accent chaud (survol de bouton, progression d'un curseur). */
+  accentHot: 0xf77f00,
+  /** Accent clair (bordure de focus, poignée de curseur). */
+  accentLight: 0x9fd0ff,
+  /** Vert « prêt » (état à rejoindre lorsque la partie peut démarrer). */
+  ready: 0x4ade80,
+  /** Traits de la grille de fond. */
+  gridLine: 0x2a2350,
+} as const;
+
 /** Ordonnée du titre d'un écran, en fraction de la hauteur. */
 export const TITLE_Y = 0.3;
 

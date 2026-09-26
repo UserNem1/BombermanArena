@@ -10,6 +10,7 @@
 import { Container } from 'pixi.js';
 import { Button } from '../components/Button.js';
 import {
+  COLORS,
   DESIGN_HEIGHT,
   DESIGN_WIDTH,
   TITLE_Y,
@@ -19,7 +20,6 @@ import { Grid } from '../components/Grid.js';
 
 /** Couleurs du menu (0xRRGGBB). */
 const TITLE_COLOR = 0xffd166;
-const SUBTITLE_COLOR = 0x4cc9f0;
 const TITLE_STROKE = '#4a1d00';
 const SUBTITLE_STROKE = '#0b2545';
 
@@ -55,7 +55,7 @@ export class Menu extends Container {
       'ARENA',
       DESIGN_HEIGHT * TITLE_Y + SUBTITLE_OFFSET,
       {
-        fill: SUBTITLE_COLOR,
+        fill: COLORS.accent,
         fontSize: 34,
         letterSpacing: 20,
         strokeColor: SUBTITLE_STROKE,

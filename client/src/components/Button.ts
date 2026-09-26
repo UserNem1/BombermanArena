@@ -8,20 +8,16 @@
  */
 
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { COLORS } from '../design.js';
 
 /** Dimensions et rayon des coins du bouton (px). */
 const WIDTH = 260;
 const HEIGHT = 54;
 const RADIUS = 12;
 
-/** Couleurs du bouton (0xRRGGBB). */
-const FILL = 0x2b2f4a;
-const FILL_HOVER = 0xf77f00;
+/** Couleurs propres au bouton (les autres viennent de la palette). */
 const FILL_FOCUS = 0x31578c;
-const BORDER = 0x6c63a8;
 const BORDER_HOVER = 0xffb703;
-const BORDER_FOCUS = 0x9fd0ff;
-const LABEL = 0xdfe4ff;
 
 /**
  * Un bouton est un `Container` qui regroupe :
@@ -54,7 +50,7 @@ export class Button extends Container {
         fontSize: 19,
         fontWeight: 'bold',
         letterSpacing: 3,
-        fill: LABEL,
+        fill: COLORS.text,
       }),
     });
     this.caption.anchor.set(0.5); // origine au centre du libellé
@@ -101,8 +97,16 @@ export class Button extends Container {
     const x = -WIDTH / 2;
     const y = -HEIGHT / 2;
 
-    const fill = hovered ? FILL_HOVER : focused ? FILL_FOCUS : FILL;
-    const border = hovered ? BORDER_HOVER : focused ? BORDER_FOCUS : BORDER;
+    const fill = hovered
+      ? COLORS.accentHot
+      : focused
+        ? FILL_FOCUS
+        : COLORS.panel;
+    const border = hovered
+      ? BORDER_HOVER
+      : focused
+        ? COLORS.accentLight
+        : COLORS.border;
 
     this.gfx.clear();
     // `roundRect` décrit la forme, `fill` la remplit et `stroke` dessine

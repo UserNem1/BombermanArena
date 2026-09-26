@@ -7,14 +7,13 @@
  */
 
 import { Container, Graphics } from 'pixi.js';
-import { DESIGN_HEIGHT, DESIGN_WIDTH } from '../design.js';
+import { COLORS, DESIGN_HEIGHT, DESIGN_WIDTH } from '../design.js';
 
 /** Taille d'une cellule en pixels (réservée au futur placement des
  *  personnages : réexporter quand la grille sera utilisée hors du dessin). */
 const CELL_SIZE = 80;
 
-/** Couleur et opacité des traits de la grille. */
-const LINE_COLOR = 0x2a2350;
+/** Opacité des traits de la grille. */
 const LINE_ALPHA = 0.9;
 
 export class Grid extends Container {
@@ -32,7 +31,7 @@ export class Grid extends Container {
       gfx.moveTo(0, y).lineTo(DESIGN_WIDTH, y);
     }
 
-    gfx.stroke({ width: 1, color: LINE_COLOR, alpha: LINE_ALPHA });
+    gfx.stroke({ width: 1, color: COLORS.gridLine, alpha: LINE_ALPHA });
     this.addChild(gfx);
   }
 }
