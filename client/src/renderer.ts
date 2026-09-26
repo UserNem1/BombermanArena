@@ -7,13 +7,16 @@
  * s'adapter à la fenêtre ; le fond uni est celui du canvas.
  */
 
-import { Application, Container } from 'pixi.js';
+import { Application, Container, Sprite, Texture, TextureSource } from 'pixi.js';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './design.js';
 import { Menu } from './screens/Menu.js';
 import { WaitingMenu } from './screens/WaitingMenu.js';
 import { AnimationPersonnageMenu } from './AnimationPersonnageMenu.js';
+import { CHARACTERS } from './lobby/characters.js';
 import { LobbyBus } from './lobby/LobbyBus.js';
 import { LobbyMock } from './lobby/LobbyMock.js';
+import { loadImage } from './imageLoader.js';
+import { PICKER_PREVIEW_HEIGHT } from './components/CharacterPicker.js';
 
 /** Application PixiJS : contient le renderer, le stage et la boucle de rendu. */
 const app = new Application();
@@ -47,7 +50,13 @@ const menu = new Menu(showWaiting);
 // : on peut ainsi voir la salle se remplir et basculer « prêt » sans serveur.
 const lobby = new LobbyBus();
 const mock = new LobbyMock(lobby, ['KillerBee', 'Bonnie', 'TNT', 'Pixel'], 900);
-const waiting = new WaitingMenu(showMenu, toggleReady, selectCharacter, mock.selfId);
+const waiting = new WaitingMenu(
+  showMenu,
+  toggleReady,
+  cycleCharacter,
+  mock.selfId,
+  getPreview,
+);
 lobby.on((players) => waiting.setPlayers(players));
 
 /** Bascule l'état prêt du joueur local dans le bus. */
@@ -56,9 +65,54 @@ function toggleReady(): void {
   lobby.setReady(mock.selfId, !self?.ready);
 }
 
-/** Choisit un personnage pour le joueur local (refusé si déjà pris). */
-function selectCharacter(characterId: string): void {
-  lobby.setCharacter(mock.selfId, characterId);
+/**
+ * Change le personnage du joueur local vers le premier personnage libre
+ * après le sien dans le catalogue (un joueur par personnage). Sans libre,
+ * il garde son personnage.
+ */
+function cycleCharacter(): void {
+  const self = lobby.players.find((p) => p.id === mock.selfId);
+  if (!self || CHARACTERS.length === 0) return;
+
+  const taken = new Set(lobby.players.map((p) => p.characterId));
+  const start = CHARACTERS.findIndex((c) => c.id === self.characterId);
+  for (let step = 1; step <= CHARACTERS.length; step++) {
+    const next = CHARACTERS[(start + step + CHARACTERS.length) % CHARACTERS.length];
+    if (!taken.has(next.id)) {
+      lobby.setCharacter(mock.selfId, next.id);
+      return;
+    }
+  }
+}
+
+/**
+ * Aperçus des personnages pour le sélecteur en U : l'image de chaque
+ * planche, chargée en arrière-plan et réduite à la hauteur du sélecteur.
+ * Un chargement raté n'affiche que la pastille de couleur (jamais de
+ * blocage) ; la salle est rafraîchie une fois qu'une image est prête.
+ */
+const previews = new Map<string, Sprite>();
+void loadPreviews();
+
+async function loadPreviews(): Promise<void> {
+  for (const character of CHARACTERS) {
+    try {
+      const image = await loadImage(character.sprites);
+      const sprite = new Sprite({ texture: new Texture({ source: TextureSource.from(image) }) });
+      sprite.anchor.set(0.5);
+      sprite.height = PICKER_PREVIEW_HEIGHT;
+      sprite.width = (sprite.height * image.width) / image.height;
+      previews.set(character.id, sprite);
+    } catch (error) {
+      console.error(`[renderer] image du perso ${character.id} illisible :`, error);
+    }
+  }
+  waiting.setPlayers(lobby.players);
+}
+
+/** Image du personnage pour le sélecteur, ou `null` si non chargée. */
+function getPreview(characterId: string): Sprite | null {
+  return previews.get(characterId) ?? null;
 }
 
 /** Écran actuellement affiché (menu ou salle d'attente). */

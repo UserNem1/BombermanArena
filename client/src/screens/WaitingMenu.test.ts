@@ -3,15 +3,15 @@
  *
  * PixiJS est mocké (Container/Graphics/Text/TextStyle minimaux) : on
  * vérifie la réaction de l'écran à la liste des joueurs — emplacements,
- * état « prêt / pas prêt », marqueur du joueur local, compteur, cartes de
- * personnages et déclenchement des boutons.
+ * état « prêt / pas prêt », marqueur du joueur local, compteur, sélecteur
+ * en « U » (position, personnage, aperçu) et déclenchement des boutons.
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import { Text } from 'pixi.js';
+import { Container, Text } from 'pixi.js';
 import { Button } from '../components/Button.js';
+import { SLOT_HEIGHT, SLOT_WIDTH } from '../components/PlayerSlot.js';
 import { WaitingMenu } from './WaitingMenu.js';
-import { CHARACTERS } from '../lobby/characters.js';
 import type { Player } from '../lobby/LobbyBus.js';
 
 vi.mock('pixi.js', () => {
@@ -31,6 +31,10 @@ vi.mock('pixi.js', () => {
     addChild(...children: unknown[]): unknown {
       this.children.push(...children);
       return children[0];
+    }
+    removeChild(...children: unknown[]): Container {
+      this.children = this.children.filter((c) => !children.includes(c));
+      return this;
     }
   }
   class Graphics extends Container {
@@ -93,17 +97,6 @@ const names = (screen: WaitingMenu): string[] =>
 /** Raccourci : états affichés sous les quatre emplacements. */
 const statuses = (screen: WaitingMenu): string[] =>
   screen.slots.map((slot) => slot.statusText.text);
-
-/** Raccourci en clair de l'état d'une carte : libre / choisi / pris. */
-const cardState = (screen: WaitingMenu, characterId: string): string => {
-  const card = screen.characterCards.find(
-    (c) => c.character.id === characterId,
-  );
-  if (!card) return 'absente';
-  if (card.taken) return 'prise';
-  if (card.selected) return 'choisie';
-  return 'libre';
-};
 
 const alix: Player = { id: 'p1', name: 'Alix', characterId: 'perso-1', ready: false };
 const basile: Player = { id: 'p2', name: 'Basile', characterId: 'perso-2', ready: false };
@@ -181,41 +174,57 @@ describe('WaitingMenu', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('affiche une carte par personnage du catalogue', () => {
+  it('masque le sélecteur en U tant que le joueur local n’est pas en salle', () => {
     const screen = new WaitingMenu(() => {}, () => {}, vi.fn(), 'p1');
-    expect(screen.characterCards.map((c) => c.character.id)).toEqual(
-      CHARACTERS.map((c) => c.id),
+    screen.setPlayers([]);
+    expect(screen.picker.visible).toBe(false);
+    screen.setPlayers([basile]); // joueur local absent
+    expect(screen.picker.visible).toBe(false);
+  });
+
+  it('place le sélecteur en U dans l’angle haut-gauche de l’emplacement local', () => {
+    const screen = new WaitingMenu(() => {}, () => {}, vi.fn(), 'p2');
+    screen.setPlayers([alix, basile]);
+    expect(screen.picker.visible).toBe(true);
+
+    const slot = screen.slots[1];
+    expect(screen.picker.position.x).toBeLessThan(slot.position.x);
+    expect(screen.picker.position.y).toBeLessThan(slot.position.y);
+    expect(screen.picker.position.x).toBeGreaterThanOrEqual(slot.position.x - SLOT_WIDTH / 2);
+    expect(screen.picker.position.y).toBeGreaterThanOrEqual(slot.position.y - SLOT_HEIGHT / 2);
+  });
+
+  it('décale le pseudo du joueur local pour laisser la place à la U', () => {
+    const screen = new WaitingMenu(() => {}, () => {}, vi.fn(), 'p2');
+    screen.setPlayers([alix, basile]);
+    expect(screen.slots[1].nameText.position.x).toBeGreaterThan(0);
+    expect(screen.slots[0].nameText.position.x).toBe(0);
+  });
+
+  it('affiche le personnage du joueur local dans le sélecteur', () => {
+    const screen = new WaitingMenu(() => {}, () => {}, vi.fn(), 'p2');
+    screen.setPlayers([alix, basile]);
+    expect(screen.picker.character?.id).toBe('perso-2');
+  });
+
+  it('expose dans le sélecteur l’image fournie par le renderer', () => {
+    const preview = {} as Container;
+    const screen = new WaitingMenu(
+      () => {},
+      () => {},
+      vi.fn(),
+      'p1',
+      (id) => (id === 'perso-1' ? preview : null),
     );
+    screen.setPlayers([alix]);
+    expect(screen.picker.children).toContain(preview);
   });
 
-  it('marque choisie la carte du joueur local', () => {
-    const screen = new WaitingMenu(() => {}, () => {}, vi.fn(), 'p1');
-    screen.setPlayers([alix, basile]);
-    expect(cardState(screen, 'perso-1')).toBe('choisie');
-  });
-
-  it('marque prise la carte portée par un autre joueur', () => {
-    const screen = new WaitingMenu(() => {}, () => {}, vi.fn(), 'p1');
-    screen.setPlayers([alix, basile]);
-    expect(cardState(screen, 'perso-2')).toBe('prise');
-    expect(cardState(screen, 'perso-3')).toBe('libre');
-  });
-
-  it('déclenche onSelectCharacter en activant une carte libre', () => {
-    const onSelect = vi.fn();
-    const screen = new WaitingMenu(() => {}, () => {}, onSelect, 'p1');
-    screen.setPlayers([alix]); // perso-2, 3, 4 libres
-    const card = screen.characterCards.find((c) => c.character.id === 'perso-2')!;
-    card.activate();
-    expect(onSelect).toHaveBeenCalledWith('perso-2');
-  });
-
-  it('une carte prise ne déclenche pas la sélection', () => {
-    const onSelect = vi.fn();
-    const screen = new WaitingMenu(() => {}, () => {}, onSelect, 'p1');
-    screen.setPlayers([alix, basile]); // perso-2 pris par Basile
-    const card = screen.characterCards.find((c) => c.character.id === 'perso-2')!;
-    card.activate();
-    expect(onSelect).not.toHaveBeenCalled();
+  it('déclenche onCycleCharacter quand le sélecteur est activé', () => {
+    const onCycle = vi.fn();
+    const screen = new WaitingMenu(() => {}, () => {}, onCycle, 'p1');
+    screen.setPlayers([alix]);
+    screen.picker.activate();
+    expect(onCycle).toHaveBeenCalledTimes(1);
   });
 });

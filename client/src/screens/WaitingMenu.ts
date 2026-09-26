@@ -2,19 +2,26 @@
  * Écran d'attente (salle multijoueur).
  *
  * Fond identique au menu (grille), un titre et quatre emplacements dans les
- * coins — un par joueur (voir `PlayerSlot`). En dessous : le sélecteur de
- * personnages (une carte par perso du catalogue), la synthèse « X/Y prêts »
- * et le bouton « Prêt / Pas prêt » pour le joueur local.
+ * coins — un par joueur (voir `PlayerSlot`). L'emplacement du joueur local
+ * porte un sélecteur en « U » dans son angle supérieur gauche : on clique
+ * dessus pour changer de personnage (l'image du perso y est affichée par
+ * le renderer, sinon une pastille de couleur). En dessous : la synthèse
+ * « X/Y prêts » et le bouton « Prêt / Pas prêt » pour le joueur local.
  *
  * L'écran est volontairement sans logique réseau : le bus d'événements du
  * lobby lui fournit la liste des joueurs et il notifie les actions de
- * l'utilisateur (retour, basculement prêt, choix du perso) via des
- * callbacks.
+ * l'utilisateur (retour, basculement prêt, changement de perso) via des
+ * callbacks. Le choix du perso suivant est décidé par le parent (qui
+ * connaît le bus) et restitué par `setPlayers`.
  */
 
 import { Container, Text } from 'pixi.js';
 import { Button } from '../components/Button.js';
-import { CharacterCard } from '../components/CharacterCard.js';
+import {
+  CharacterPicker,
+  PICKER_HEIGHT,
+  PICKER_WIDTH,
+} from '../components/CharacterPicker.js';
 import { PlayerSlot, SLOT_HEIGHT, SLOT_WIDTH } from '../components/PlayerSlot.js';
 import {
   COLORS,
@@ -25,7 +32,7 @@ import {
   statusStyle,
 } from '../design.js';
 import { Grid } from '../components/Grid.js';
-import { CHARACTERS } from '../lobby/characters.js';
+import { getCharacter } from '../lobby/characters.js';
 import type { Player } from '../lobby/LobbyBus.js';
 
 /** Couleur du titre de la page. */
@@ -38,12 +45,7 @@ const SUMMARY_READY_STYLE = statusStyle(COLORS.ready);
 /** Marge des emplacements aux bords de l'écran (px). */
 const SLOT_MARGIN = 90;
 
-/** Largeur d'une carte de personnage et espacement (px). */
-const CARD_WIDTH = 110;
-const CARD_GAP = 10;
-
-/** Ordonnées (fractions de hauteur) : sélecteur, synthèse, boutons. */
-const SELECTOR_Y = 0.48;
+/** Ordonnées (fractions de hauteur) : synthèse, boutons. */
 const SUMMARY_Y = 0.64;
 const TOGGLE_Y = 0.83;
 const BACK_Y = 0.93;
@@ -59,9 +61,11 @@ const SLOTS_CENTER: [number, number][] = [
   ],
 ];
 
-/** Sélecteur de personnages centré, une carte par perso du catalogue. */
-const SELECTOR_X0 = (DESIGN_WIDTH - CHARACTERS.length * CARD_WIDTH
-  - (CHARACTERS.length - 1) * CARD_GAP) / 2;
+/** Décrochage du centre du sélecteur en U par rapport à son emplacement
+ *  (angle supérieur gauche : bord haut-gauche de l'emplacement + moitié du
+ *  sélecteur). */
+const PICKER_DX = -(SLOT_WIDTH / 2) + PICKER_WIDTH / 2 + 10;
+const PICKER_DY = -(SLOT_HEIGHT / 2) + PICKER_HEIGHT / 2 + 10;
 
 /** Message affiché quand toute la salle est prête. */
 const ALL_READY_MESSAGE = 'Tous les joueurs sont prêts !';
@@ -72,27 +76,38 @@ const NOT_READY_LABEL = 'PAS PRÊT';
 export class WaitingMenu extends Container {
   /** Emplacements des joueurs, exposés pour les tests. */
   readonly slots: PlayerSlot[] = [];
-  /** Cartes de sélection des personnages, exposées pour les tests. */
-  readonly characterCards: CharacterCard[] = [];
+  /** Sélecteur en U du personnage du joueur local, exposé pour les tests. */
+  readonly picker: CharacterPicker;
   /** Bouton « Prêt / Pas prêt ». */
   readonly readyButton: Button;
   /** Texte de synthèse (compteur / tous prêts). */
   readonly summaryText: Text;
   /** Identifiant du joueur local (marqué « · vous »). */
   private readonly selfId: string;
+  /** Fournit l'image (pré-mise à l'échelle) d'un personnage, ou `null`. */
+  private readonly getPreview: (characterId: string) => Container | null;
 
   constructor(
     onBack: () => void,
     onToggleReady: () => void,
-    onSelectCharacter: (characterId: string) => void,
+    onCycleCharacter: () => void,
     selfId: string,
+    getPreview: (characterId: string) => Container | null = () => null,
   ) {
     super();
     this.selfId = selfId;
+    this.getPreview = getPreview;
 
     // Décor de fond identique au menu : la grille de l'arène.
     this.addChild(new Grid());
     this.buildSlots();
+
+    // Sélecteur en U : d'abord invisible, place sur l'emplacement du joueur
+    // local dès la première liste de joueurs (voir `setPlayers`).
+    this.picker = new CharacterPicker(null, onCycleCharacter);
+    this.picker.visible = false;
+    this.addChild(this.picker);
+
     this.addChild(
       createCenteredTitle('EN ATTENTE', DESIGN_HEIGHT * TITLE_Y, {
         fill: COLORS.accent,
@@ -102,7 +117,6 @@ export class WaitingMenu extends Container {
         strokeWidth: 6,
       }),
     );
-    this.buildCharacterSelector(onSelectCharacter);
     const controls = this.buildControls(onBack, onToggleReady);
     this.summaryText = controls.summaryText;
     this.readyButton = controls.readyButton;
@@ -112,21 +126,35 @@ export class WaitingMenu extends Container {
    * Reflète la liste des joueurs de la salle dans les emplacements.
    *
    * Les premiers joueurs occupent les coins, dans l'ordre ; les
-   * emplacements restants restent « EN ATTENTE… ». Met aussi à jour la
-   * synthèse « prêts / tous prêts », le libellé du bouton et les états
-   * des cartes de personnages (choisi, pris, libre).
+   * emplacements restants restent « EN ATTENTE… ». Le sélecteur en U suit
+   * l'emplacement du joueur local (ou se masque s'il n'est pas en salle).
+   * Met aussi à jour la synthèse « prêts / tous prêts » et le libellé du
+   * bouton.
    */
   setPlayers(players: readonly Player[]): void {
+    const rawIndex = players.findIndex((p) => p.id === this.selfId);
+    const selfIndex = rawIndex < this.slots.length ? rawIndex : -1;
     this.slots.forEach((slot, index) => {
-      slot.setPlayer(players[index], players[index]?.id === this.selfId);
+      slot.setPlayer(players[index], index === selfIndex);
+      slot.setPicked(index === selfIndex);
     });
-    this.characterCards.forEach((card) => {
-      const owner = players.find((p) => p.characterId === card.character.id);
-      const isSelf = owner?.id === this.selfId;
-      card.setSelected(isSelf);
-      card.setTaken(owner !== undefined && !isSelf);
-    });
+    this.updatePicker(players, selfIndex);
     this.refreshSummary(players);
+  }
+
+  /** Place le sélecteur sur l'emplacement du joueur local et le renseigne. */
+  private updatePicker(players: readonly Player[], selfIndex: number): void {
+    const self = selfIndex >= 0 ? players[selfIndex] : undefined;
+    this.picker.visible = self !== undefined;
+    if (!self) return;
+
+    const target = this.slots[selfIndex];
+    this.picker.position.set(
+      target.position.x + PICKER_DX,
+      target.position.y + PICKER_DY,
+    );
+    this.picker.setCharacter(getCharacter(self.characterId) ?? null);
+    this.picker.setPreview(this.getPreview(self.characterId));
   }
 
   /** Met à jour le compteur de joueurs prêts et le libellé du bouton. */
@@ -155,22 +183,6 @@ export class WaitingMenu extends Container {
       this.slots.push(slot);
       this.addChild(slot);
     }
-  }
-
-  /** Sélecteur de personnages : une carte par perso du catalogue (le
-   *  roster peut grandir sans toucher à l'écran). */
-  private buildCharacterSelector(
-    onSelectCharacter: (characterId: string) => void,
-  ): void {
-    CHARACTERS.forEach((character, index) => {
-      const card = new CharacterCard(character, () => onSelectCharacter(character.id));
-      card.position.set(
-        SELECTOR_X0 + index * (CARD_WIDTH + CARD_GAP),
-        DESIGN_HEIGHT * SELECTOR_Y,
-      );
-      this.characterCards.push(card);
-      this.addChild(card);
-    });
   }
 
   /** Construit la synthèse, le bouton « prêt » et le bouton retour. */

@@ -28,6 +28,9 @@ const STATUS_OFFSET = 26;
 const AVATAR_RADIUS = 16;
 const AVATAR_X = -72;
 
+/** Bascule du pseudo/pastille à droite, pour libérer la U du sélecteur. */
+const PICKED_NAMESHIFT = 56;
+
 /** Libellés et marqueur du joueur local. */
 const EMPTY_LABEL = 'EN ATTENTE…';
 const READY_LABEL = 'PRÊT';
@@ -108,5 +111,16 @@ export class PlayerSlot extends Container {
     } else {
       this.avatar.visible = false;
     }
+  }
+
+  /**
+   * Décale le pseudo et sa pastille vers la droite pour laisser la place
+   * au sélecteur en U dans l'angle supérieur gauche de l'emplacement —
+   * réservé à l'emplacement du joueur local.
+   */
+  setPicked(picked: boolean): void {
+    const offset = picked ? PICKED_NAMESHIFT : 0;
+    this.nameText.position.set(offset, NAME_OFFSET);
+    this.avatar.position.set(AVATAR_X + offset, NAME_OFFSET);
   }
 }
