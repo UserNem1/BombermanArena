@@ -33,6 +33,15 @@ export class LobbyMock {
   }
 
   /**
+   * Identifiant du joueur local (l'hôte de la salle simulée). En
+   * conditions réelles, ce sera l'identifiant fourni par la connexion
+   * WebSocket ; ici c'est le premier joueur simulé.
+   */
+  get selfId(): string {
+    return this.makePlayer(this.names[0], 0).id;
+  }
+
+  /**
    * Lance la simulation : l'hôte rejoint immédiatement, les joueurs
    * suivants arrivent un à un, espacés du délai configuré. Jamais plus de
    * `MAX_PLAYERS` joueurs (règle du jeu). Sans effet si déjà démarré.
@@ -67,6 +76,6 @@ export class LobbyMock {
 
   /** Construit un joueur simulé, identifiable par sa position d'arrivée. */
   private makePlayer(name: string, index: number): Player {
-    return { id: `mock-${index + 1}`, name };
+    return { id: `mock-${index + 1}`, name, ready: false };
   }
 }

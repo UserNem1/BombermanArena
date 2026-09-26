@@ -11,8 +11,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { MAX_PLAYERS, LobbyBus, type Player } from './LobbyBus.js';
 
 /** Joueuse de test. */
-const alix: Player = { id: 'p1', name: 'Alix' };
-const basile: Player = { id: 'p2', name: 'Basile' };
+const alix: Player = { id: 'p1', name: 'Alix', ready: false };
+const basile: Player = { id: 'p2', name: 'Basile', ready: false };
 
 describe('LobbyBus', () => {
   it('démarre avec une salle vide', () => {
@@ -91,5 +91,49 @@ describe('LobbyBus', () => {
     bus.players.push(basile);
 
     expect(bus.players).toEqual([alix]);
+  });
+
+  it('fait arriver un joueur non prêt par défaut', () => {
+    const bus = new LobbyBus();
+    const sansEtat = { id: 'p9', name: 'Sans état' } as Player;
+
+    bus.join(sansEtat);
+
+    expect(bus.players[0].ready).toBe(false);
+  });
+
+  it('marque un joueur prêt et prévient les abonnés', () => {
+    const bus = new LobbyBus();
+    bus.join(alix);
+    const listener = vi.fn();
+    bus.on(listener);
+
+    bus.setReady(alix.id, true);
+
+    expect(bus.players[0].ready).toBe(true);
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignore un changement d’état pour un joueur inconnu', () => {
+    const bus = new LobbyBus();
+    const listener = vi.fn();
+    bus.on(listener);
+
+    bus.setReady('inconnu', true);
+
+    expect(bus.players).toEqual([]);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('ignore un changement d’état redondant (déjà dans cet état)', () => {
+    const bus = new LobbyBus();
+    bus.join(alix);
+    bus.setReady(alix.id, true);
+    const listener = vi.fn();
+    bus.on(listener);
+
+    bus.setReady(alix.id, true);
+
+    expect(listener).not.toHaveBeenCalled();
   });
 });

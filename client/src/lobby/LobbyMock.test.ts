@@ -79,4 +79,21 @@ describe('LobbyMock', () => {
 
     expect(bus.players).toHaveLength(1);
   });
+
+  it('expose l’identifiant du joueur local (l’hôte) même avant démarrage', () => {
+    const bus = new LobbyBus();
+    const mock = new LobbyMock(bus, ['Alix', 'Basile'], 100);
+
+    expect(mock.selfId).toBe('mock-1');
+  });
+
+  it('fait arriver les joueurs non prêts', () => {
+    const bus = new LobbyBus();
+    const mock = new LobbyMock(bus, ['Alix', 'Basile'], 100);
+    mock.start();
+
+    vi.advanceTimersByTime(1000);
+
+    expect(bus.players.every((p) => p.ready === false)).toBe(true);
+  });
 });
