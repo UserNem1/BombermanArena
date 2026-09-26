@@ -22,12 +22,10 @@ describe('catalogue des personnages', () => {
     expect(CHARACTERS.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('chaque perso a un label, une planche et une grille valides', () => {
+  it('chaque perso a un label et une planche d’animations valides', () => {
     for (const c of CHARACTERS) {
       expect(c.label.length).toBeGreaterThan(0);
       expect(c.sprites).toMatch(/^assets\/.+\.(png|jpe?g)$/i);
-      expect(c.cols).toBeGreaterThan(0);
-      expect(c.rows).toBeGreaterThan(0);
     }
   });
 

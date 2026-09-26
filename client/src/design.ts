@@ -8,7 +8,7 @@
  * un fabriquant de style de titre, afin d'éviter toute duplication.
  */
 
-import { Text, TextStyle } from 'pixi.js';
+import { Graphics, Text, TextStyle } from 'pixi.js';
 
 /** Largeur logique de référence de l'interface (px). */
 export const DESIGN_WIDTH = 1280;
@@ -43,6 +43,33 @@ export const COLORS = {
 
 /** Ordonnée du titre d'un écran, en fraction de la hauteur. */
 export const TITLE_Y = 0.3;
+
+/**
+ * Fabriquant du style de texte compact des états (« prêt », « pas prêt »,
+ * compteur) : même police, même interligne ; le remplissage varie selon
+ * l'état. Centralise le motif partagé par les emplacements joueurs et la
+ * synthèse de la salle d'attente.
+ *
+ * @param fill     Couleur du texte (0xRRGGBB).
+ * @param fontSize Taille (px, défaut 16).
+ */
+export function statusStyle(fill: number, fontSize = 16): TextStyle {
+  return new TextStyle({
+    fontFamily: 'Arial',
+    fontSize,
+    fontWeight: 'bold',
+    letterSpacing: 2,
+    fill,
+  });
+}
+
+/**
+ * Remplit un disque centré sur l'origine du `Graphics` donné (avatar
+ * coloré d'un personnage). Retourne le même `Graphics` pour chaînage.
+ */
+export function fillDisc(graphics: Graphics, radius: number, color: number): Graphics {
+  return graphics.circle(0, 0, radius).fill(color);
+}
 
 /** Masse de bordure du texte des titres (regularité visuelle). */
 const TITLE_PADDING = 10;

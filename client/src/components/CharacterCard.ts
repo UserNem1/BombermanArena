@@ -1,15 +1,16 @@
 /**
  * Carte de sélection d'un personnage (parcelle du roster).
  *
- * Un petit panneau arrondi : pastille de la couleur du perso, nom en
- * dessous. Trois états visuels — libre (bordure neutre), pris par un autre
- * joueur (grisé, clic sans effet), choisi par le joueur local (bordure
- * claire). Le parent (l'écran d'attente) charge les états via
- * `setSelected` / `setTaken` à chaque liste de joueurs reçue.
+ * Un petit panneau arrondi : pastille de la couleur du perso (dessinée une
+ * fois, la carte entière se grise via l'opacité) et son nom en dessous.
+ * Trois états visuels — libre (bordure neutre), pris par un autre joueur
+ * (grisé, clic sans effet), choisi par le joueur local (bordure claire).
+ * Le parent (l'écran d'attente) charge les états via `setSelected` /
+ * `setTaken` à chaque liste de joueurs reçue.
  */
 
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
-import { COLORS } from '../design.js';
+import { COLORS, fillDisc } from '../design.js';
 import type { Character } from '../lobby/characters.js';
 
 /** Dimensions de la carte et rayon des coins (px). */
@@ -47,12 +48,17 @@ export class CharacterCard extends Container {
     this.eventMode = 'static';
     this.cursor = 'pointer';
 
+    // Pastille : couleur fixe du personnage, jamais redessinée. L'opacité
+    // de la carte entière gère l'indisponibilité (cf. `paint`).
+    const disc = fillDisc(new Graphics(), DISC_RADIUS, character.color);
+    disc.position.set(0, DISC_Y);
+
     this.caption = new Text({ text: character.label, style: LABEL_STYLE });
     this.caption.anchor.set(0.5);
     this.caption.position.set(0, LABEL_Y);
 
     this.on('pointertap', () => this.activate());
-    this.addChild(this.gfx, this.caption);
+    this.addChild(this.gfx, disc, this.caption);
     this.paint();
   }
 
@@ -85,7 +91,7 @@ export class CharacterCard extends Container {
     }
   }
 
-  /** Redessine la carte selon ses états (sélection, indisponibilité). */
+  /** Redessine le panneau selon ses états (sélection, indisponibilité). */
   private paint(): void {
     const border = this.selected_
       ? COLORS.accentLight
@@ -101,8 +107,6 @@ export class CharacterCard extends Container {
     this.gfx
       .roundRect(-WIDTH / 2, -HEIGHT / 2, WIDTH, HEIGHT, RADIUS)
       .fill(COLORS.panel)
-      .stroke({ width: borderWidth, color: border })
-      .circle(0, DISC_Y, DISC_RADIUS)
-      .fill(this.character.color);
+      .stroke({ width: borderWidth, color: border });
   }
 }

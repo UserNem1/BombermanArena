@@ -12,7 +12,7 @@
  */
 
 import { Container, Graphics, Text, TextStyle } from 'pixi.js';
-import { COLORS } from '../design.js';
+import { COLORS, fillDisc, statusStyle } from '../design.js';
 import { getCharacter } from '../lobby/characters.js';
 import type { Player } from '../lobby/LobbyBus.js';
 
@@ -42,21 +42,9 @@ const NAME_STYLE = new TextStyle({
   fill: COLORS.text,
 });
 /** Style de l'état « prêt » (vert). */
-const READY_STYLE = new TextStyle({
-  fontFamily: 'Arial',
-  fontSize: 16,
-  fontWeight: 'bold',
-  letterSpacing: 2,
-  fill: COLORS.ready,
-});
+const READY_STYLE = statusStyle(COLORS.ready);
 /** Style de l'état « pas prêt » et de l'attente (gris). */
-const NOT_READY_STYLE = new TextStyle({
-  fontFamily: 'Arial',
-  fontSize: 16,
-  fontWeight: 'bold',
-  letterSpacing: 2,
-  fill: COLORS.muted,
-});
+const NOT_READY_STYLE = statusStyle(COLORS.muted);
 
 export class PlayerSlot extends Container {
   /** Pseudo affiché (ou « EN ATTENTE… »), exposé pour les tests. */
@@ -115,9 +103,7 @@ export class PlayerSlot extends Container {
     const character = getCharacter(player.characterId);
     if (character) {
       this.avatar.clear();
-      this.avatar
-        .circle(0, 0, AVATAR_RADIUS)
-        .fill(character.color);
+      fillDisc(this.avatar, AVATAR_RADIUS, character.color);
       this.avatar.visible = true;
     } else {
       this.avatar.visible = false;

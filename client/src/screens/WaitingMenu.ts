@@ -2,17 +2,17 @@
  * Écran d'attente (salle multijoueur).
  *
  * Fond identique au menu (grille), un titre et quatre emplacements dans les
- * coins — un par joueur (voir `PlayerSlot`). `setPlayers` répartit la liste
- * de la salle sur ces emplacements ; le compteur en dessous indique combien
- * de joueurs sont prêts, et le bouton « Prêt / Pas prêt » permet au joueur
- * local de (dé)clarer sa disponibilité.
+ * coins — un par joueur (voir `PlayerSlot`). En dessous : le sélecteur de
+ * personnages (une carte par perso du catalogue), la synthèse « X/Y prêts »
+ * et le bouton « Prêt / Pas prêt » pour le joueur local.
  *
  * L'écran est volontairement sans logique réseau : le bus d'événements du
  * lobby lui fournit la liste des joueurs et il notifie les actions de
- * l'utilisateur (retour, basculement prêt) via des callbacks.
+ * l'utilisateur (retour, basculement prêt, choix du perso) via des
+ * callbacks.
  */
 
-import { Container, Text, TextStyle } from 'pixi.js';
+import { Container, Text } from 'pixi.js';
 import { Button } from '../components/Button.js';
 import { CharacterCard } from '../components/CharacterCard.js';
 import { PlayerSlot, SLOT_HEIGHT, SLOT_WIDTH } from '../components/PlayerSlot.js';
@@ -22,6 +22,7 @@ import {
   DESIGN_WIDTH,
   TITLE_Y,
   createCenteredTitle,
+  statusStyle,
 } from '../design.js';
 import { Grid } from '../components/Grid.js';
 import { CHARACTERS } from '../lobby/characters.js';
@@ -30,27 +31,15 @@ import type { Player } from '../lobby/LobbyBus.js';
 /** Couleur du titre de la page. */
 const TITLE_STROKE = '#0b2545';
 
-/** Styles de la synthèse sous le bouton. */
-const SUMMARY_STYLE = new TextStyle({
-  fontFamily: 'Arial',
-  fontSize: 16,
-  fontWeight: 'bold',
-  letterSpacing: 2,
-  fill: COLORS.muted,
-});
-const SUMMARY_READY_STYLE = new TextStyle({
-  fontFamily: 'Arial',
-  fontSize: 16,
-  fontWeight: 'bold',
-  letterSpacing: 2,
-  fill: COLORS.ready,
-});
+/** Styles de la synthèse sous le sélecteur (compteur / tous prêts). */
+const SUMMARY_STYLE = statusStyle(COLORS.muted);
+const SUMMARY_READY_STYLE = statusStyle(COLORS.ready);
 
 /** Marge des emplacements aux bords de l'écran (px). */
 const SLOT_MARGIN = 90;
 
 /** Largeur d'une carte de personnage et espacement (px). */
-export const CARD_WIDTH = 110;
+const CARD_WIDTH = 110;
 const CARD_GAP = 10;
 
 /** Ordonnées (fractions de hauteur) : sélecteur, synthèse, boutons. */
@@ -103,16 +92,7 @@ export class WaitingMenu extends Container {
 
     // Décor de fond identique au menu : la grille de l'arène.
     this.addChild(new Grid());
-
-    // Les quatre emplacements joueurs, un dans chaque coin.
-    for (const [x, y] of SLOTS_CENTER) {
-      const slot = new PlayerSlot();
-      slot.position.set(x, y);
-      this.slots.push(slot);
-      this.addChild(slot);
-    }
-
-    // Titre au centre, au-dessus des emplacements du haut.
+    this.buildSlots();
     this.addChild(
       createCenteredTitle('EN ATTENTE', DESIGN_HEIGHT * TITLE_Y, {
         fill: COLORS.accent,
@@ -122,31 +102,10 @@ export class WaitingMenu extends Container {
         strokeWidth: 6,
       }),
     );
-
-    // Sélecteur de personnages : une carte par perso du catalogue (le
-    // roster peut grandir sans toucher à l'écran).
-    CHARACTERS.forEach((character, index) => {
-      const card = new CharacterCard(character, () => onSelectCharacter(character.id));
-      card.position.set(SELECTOR_X0 + index * (CARD_WIDTH + CARD_GAP), DESIGN_HEIGHT * SELECTOR_Y);
-      this.characterCards.push(card);
-      this.addChild(card);
-    });
-
-    // Synthèse : « X/Y prêts », puis « Tous les joueurs sont prêts ! ».
-    this.summaryText = new Text({ text: '', style: SUMMARY_STYLE });
-    this.summaryText.anchor.set(0.5);
-    this.summaryText.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * SUMMARY_Y);
-    this.addChild(this.summaryText);
-
-    // Bascule l'état prêt du joueur local.
-    this.readyButton = new Button(READY_LABEL, onToggleReady);
-    this.readyButton.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * TOGGLE_Y);
-    this.addChild(this.readyButton);
-
-    // Retour au menu principal.
-    const back = new Button('RETOUR', onBack);
-    back.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * BACK_Y);
-    this.addChild(back);
+    this.buildCharacterSelector(onSelectCharacter);
+    const controls = this.buildControls(onBack, onToggleReady);
+    this.summaryText = controls.summaryText;
+    this.readyButton = controls.readyButton;
   }
 
   /**
@@ -163,8 +122,9 @@ export class WaitingMenu extends Container {
     });
     this.characterCards.forEach((card) => {
       const owner = players.find((p) => p.characterId === card.character.id);
-      card.setSelected(owner?.id === this.selfId);
-      card.setTaken(owner !== undefined && owner.id !== this.selfId);
+      const isSelf = owner?.id === this.selfId;
+      card.setSelected(isSelf);
+      card.setTaken(owner !== undefined && !isSelf);
     });
     this.refreshSummary(players);
   }
@@ -185,5 +145,52 @@ export class WaitingMenu extends Container {
 
     const self = players.find((p) => p.id === this.selfId);
     this.readyButton.setLabel(self?.ready ? NOT_READY_LABEL : READY_LABEL);
+  }
+
+  /** Place les quatre emplacements de joueur dans les coins. */
+  private buildSlots(): void {
+    for (const [x, y] of SLOTS_CENTER) {
+      const slot = new PlayerSlot();
+      slot.position.set(x, y);
+      this.slots.push(slot);
+      this.addChild(slot);
+    }
+  }
+
+  /** Sélecteur de personnages : une carte par perso du catalogue (le
+   *  roster peut grandir sans toucher à l'écran). */
+  private buildCharacterSelector(
+    onSelectCharacter: (characterId: string) => void,
+  ): void {
+    CHARACTERS.forEach((character, index) => {
+      const card = new CharacterCard(character, () => onSelectCharacter(character.id));
+      card.position.set(
+        SELECTOR_X0 + index * (CARD_WIDTH + CARD_GAP),
+        DESIGN_HEIGHT * SELECTOR_Y,
+      );
+      this.characterCards.push(card);
+      this.addChild(card);
+    });
+  }
+
+  /** Construit la synthèse, le bouton « prêt » et le bouton retour. */
+  private buildControls(
+    onBack: () => void,
+    onToggleReady: () => void,
+  ): { summaryText: Text; readyButton: Button } {
+    const summaryText = new Text({ text: '', style: SUMMARY_STYLE });
+    summaryText.anchor.set(0.5);
+    summaryText.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * SUMMARY_Y);
+    this.addChild(summaryText);
+
+    const readyButton = new Button(READY_LABEL, onToggleReady);
+    readyButton.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * TOGGLE_Y);
+    this.addChild(readyButton);
+
+    const back = new Button('RETOUR', onBack);
+    back.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * BACK_Y);
+    this.addChild(back);
+
+    return { summaryText, readyButton };
   }
 }
