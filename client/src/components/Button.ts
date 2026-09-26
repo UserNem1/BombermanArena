@@ -80,6 +80,11 @@ export class Button extends Container {
     this.paint(false, focused);
   }
 
+  /** Remplace le libellé affiché au centre du bouton. */
+  setLabel(label: string): void {
+    this.caption.text = label;
+  }
+
   /**
    * Redessine le bouton.
    * @param hovered Indique si le curseur survole le bouton.
