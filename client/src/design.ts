@@ -8,7 +8,7 @@
  * un fabriquant de style de titre, afin d'éviter toute duplication.
  */
 
-import { TextStyle } from 'pixi.js';
+import { Text, TextStyle } from 'pixi.js';
 
 /** Largeur logique de référence de l'interface (px). */
 export const DESIGN_WIDTH = 1280;
@@ -51,4 +51,43 @@ export function titleStyle(
     stroke: { color: strokeColor, width: strokeWidth },
     padding: TITLE_PADDING,
   });
+}
+
+/** Options de style pour `createCenteredTitle` (voir `titleStyle`). */
+export interface TitleOptions {
+  /** Couleur du texte (0xRRGGBB). */
+  fill: number;
+  /** Taille (px). */
+  fontSize: number;
+  /** Interligne des lettres (px, défaut 4). */
+  letterSpacing?: number;
+  /** Couleur du contour (chaîne CSS). */
+  strokeColor: string;
+  /** Épaisseur du contour (px, défaut 5). */
+  strokeWidth?: number;
+}
+
+/**
+ * Fabriquant du titre d'un écran : texte centré horizontalement à l'écran,
+ * ancré sur son centre (la position désigne donc le milieu du titre).
+ * Centralise le motif commun à tous les écrans (Menu, salle d'attente...).
+ *
+ * @param text Libellé affiché.
+ * @param y    Ordonnée du centre du titre (dans l'espace de conception).
+ * @param opts Style du titre.
+ */
+export function createCenteredTitle(text: string, y: number, opts: TitleOptions): Text {
+  const title = new Text({
+    text,
+    style: titleStyle(
+      opts.fill,
+      opts.fontSize,
+      opts.letterSpacing ?? 4,
+      opts.strokeColor,
+      opts.strokeWidth ?? 5,
+    ),
+  });
+  title.anchor.set(0.5);
+  title.position.set(DESIGN_WIDTH / 2, y);
+  return title;
 }

@@ -7,13 +7,13 @@
  * canvas PixiJS.
  */
 
-import { Container, Text } from 'pixi.js';
+import { Container } from 'pixi.js';
 import { Button } from '../components/Button.js';
 import {
   DESIGN_HEIGHT,
   DESIGN_WIDTH,
   TITLE_Y,
-  titleStyle,
+  createCenteredTitle,
 } from '../design.js';
 import { Grid } from '../components/Grid.js';
 
@@ -42,24 +42,26 @@ export class Menu extends Container {
     // rester derrière le titre et les boutons.
     this.addChild(new Grid());
 
-    // Titre principal. `Text` dessine du texte et `TextStyle` décrit son
-    // apparence (police, taille, couleur, contour...).
-    const title = new Text({
-      text: 'BOMBERMAN',
-      style: titleStyle(TITLE_COLOR, 64, 6, TITLE_STROKE, 7),
+    // Titre principal, puis sous-titre centrés ; `createCenteredTitle`
+    // gère l'ancrage au centre et le style partagé.
+    const title = createCenteredTitle('BOMBERMAN', DESIGN_HEIGHT * TITLE_Y, {
+      fill: TITLE_COLOR,
+      fontSize: 64,
+      letterSpacing: 6,
+      strokeColor: TITLE_STROKE,
+      strokeWidth: 7,
     });
-    // `anchor` place l'origine du texte en son centre : la position
-    // indiquée correspond donc au centre du texte, pas à son coin.
-    title.anchor.set(0.5);
-    title.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * TITLE_Y);
-
-    // Sous-titre, centré sous le titre.
-    const subtitle = new Text({
-      text: 'ARENA',
-      style: titleStyle(SUBTITLE_COLOR, 34, 20, SUBTITLE_STROKE, 5),
-    });
-    subtitle.anchor.set(0.5);
-    subtitle.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * TITLE_Y + SUBTITLE_OFFSET);
+    const subtitle = createCenteredTitle(
+      'ARENA',
+      DESIGN_HEIGHT * TITLE_Y + SUBTITLE_OFFSET,
+      {
+        fill: SUBTITLE_COLOR,
+        fontSize: 34,
+        letterSpacing: 20,
+        strokeColor: SUBTITLE_STROKE,
+        strokeWidth: 5,
+      },
+    );
 
     // Ajoute les deux textes au menu.
     this.addChild(title, subtitle);

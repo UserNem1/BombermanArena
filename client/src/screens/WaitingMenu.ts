@@ -15,7 +15,7 @@ import {
   DESIGN_HEIGHT,
   DESIGN_WIDTH,
   TITLE_Y,
-  titleStyle,
+  createCenteredTitle,
 } from '../design.js';
 import { Grid } from '../components/Grid.js';
 import type { Player } from '../lobby/LobbyBus.js';
@@ -91,13 +91,15 @@ export class WaitingMenu extends Container {
     }
 
     // Titre au centre, au-dessus des emplacements du haut.
-    const title = new Text({
-      text: 'EN ATTENTE',
-      style: titleStyle(TITLE_COLOR, 40, 8, TITLE_STROKE, 6),
-    });
-    title.anchor.set(0.5);
-    title.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * TITLE_Y);
-    this.addChild(title);
+    this.addChild(
+      createCenteredTitle('EN ATTENTE', DESIGN_HEIGHT * TITLE_Y, {
+        fill: TITLE_COLOR,
+        fontSize: 40,
+        letterSpacing: 8,
+        strokeColor: TITLE_STROKE,
+        strokeWidth: 6,
+      }),
+    );
 
     // Retour au menu principal.
     const back = new Button('RETOUR', onBack);
