@@ -52,4 +52,30 @@ describe('Mécaniques de la Phase 3 : Explosions', () => {
         // 3. Les flammes doivent avoir touché la case de la caisse détruite
         expect(burnedTiles).toContainEqual({ x: 2, y: 1 });
     });
+
+    describe('Entité Joueur (Player.js)', () => {
+    const Player = require('./Player');
+
+    test('Le joueur se déplace correctement s\'il est vivant', () => {
+        const player = new Player(5, 5, 'Ilyes');
+        
+        player.move('up');
+        expect(player.y).toBe(4); // 5 - 1 = 4
+        expect(player.x).toBe(5); // x ne change pas
+    });
+
+    test('Un joueur mort ne peut plus se déplacer', () => {
+        const player = new Player(5, 5, 'Ilyes');
+        
+        player.die();
+        expect(player.isAlive).toBe(false);
+
+        player.move('down'); // On essaie de le faire bouger
+        // Les coordonnées ne doivent pas avoir changé
+        expect(player.y).toBe(5); 
+        expect(player.x).toBe(5);
+    });
+    });
+
+    
 });
