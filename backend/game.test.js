@@ -77,5 +77,29 @@ describe('Mécaniques de la Phase 3 : Explosions', () => {
     });
     });
 
+    describe('Réactions en chaîne', () => {
+    const Map = require('./Map');
+
+    test('Une bombe fait exploser une deuxième bombe dans son rayon', () => {
+        const gameMap = new Map();
+        
+        // Grille de test :
+        // (1,1) = Bombe 1 | (2,1) = Bombe 2 | (3,1) = Caisser destructible (2)
+        gameMap.grid = [
+            [1, 1, 1, 1, 1],
+            [1, 3, 3, 2, 1],
+            [1, 1, 1, 1, 1]
+        ];
+
+        // On fait exploser la première bombe en (1,1) avec une portée de 1
+        // Sans réaction en chaîne, le feu s'arrêterait en (2,1) et ne toucherait JAMAIS la caisse en (3,1)
+        const burnedTiles = gameMap.calculateExplosion(1, 1, 1);
+
+        // La caisse en (3,1) a-t-elle été détruite par la seconde bombe ?
+        expect(gameMap.grid[1][3]).toBe(0);
+        expect(burnedTiles).toContainEqual({ x: 3, y: 1 });
+    });
+});
+
     
 });

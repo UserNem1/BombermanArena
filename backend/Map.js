@@ -20,53 +20,68 @@ class Map {
         }
         return this.grid[y][x] === 0;
     }
-
-
     
-    // Méthode à ajouter dans la classe Map
     calculateExplosion(startX, startY, radius) {
-        const affectedTiles = [];
-        // La case centrale (là où est la bombe) est toujours touchée
-        affectedTiles.push({ x: startX, y: startY });
+            const affectedTiles = [];
+            affectedTiles.push({ x: startX, y: startY });
 
-        // Les 4 directions de propagation : Haut, Bas, Gauche, Droite
-        const directions = [
-            { dx: 0, dy: -1 }, // Haut
-            { dx: 0, dy: 1 },  // Bas
-            { dx: -1, dy: 0 }, // Gauche
-            { dx: 1, dy: 0 }   // Droite
-        ];
-
-        directions.forEach(dir => {
-            for (let i = 1; i <= radius; i++) {
-                const targetX = startX + (dir.dx * i);
-                const targetY = startY + (dir.dy * i);
-
-                // Sécurité : vérifier que l'explosion ne sort pas des limites de la carte
-                if (targetY < 0 || targetY >= this.grid.length || targetX < 0 || targetX >= this.grid[0].length) {
-                    break; 
-                }
-
-                const cell = this.grid[targetY][targetX];
-
-                if (cell === 1) {
-                    // Mur indestructible (1) : le feu s'arrête net, on casse la boucle
-                    break;
-                } else if (cell === 2) {
-                    // Mur destructible (2) : il est détruit (devient 0) et le feu s'arrête
-                    this.grid[targetY][targetX] = 0;
-                    affectedTiles.push({ x: targetX, y: targetY });
-                    break;
-                } else {
-                    // Case vide (0) : le feu passe à travers, on continue la boucle
-                    affectedTiles.push({ x: targetX, y: targetY });
-                }
+            // Si la case de départ contenait une bombe (3), on la transforme en case vide (0)
+            if (this.grid[startY][startX] === 3) {
+                this.grid[startY][startX] = 0;
             }
-        });
 
-        // On retourne la liste des coordonnées brûlées pour pouvoir tuer les joueurs plus tard
-        return affectedTiles;
-    }
+            const directions = [
+                { dx: 0, dy: -1 }, // Haut
+                { dx: 0, dy: 1 },  // Bas
+                { dx: -1, dy: 0 }, // Gauche
+                { dx: 1, dy: 0 }   // Droite
+            ];
+
+            directions.forEach(dir => {
+                for (let i = 1; i <= radius; i++) {
+                    const targetX = startX + (dir.dx * i);
+                    const targetY = startY + (dir.dy * i);
+
+                    if (targetY < 0 || targetY >= this.grid.length || targetX < 0 || targetX >= this.grid[0].length) {
+                        break;
+                    }
+
+                    const cell = this.grid[targetY][targetX];
+
+                    if (cell === 1) {
+                        // Mur indestructible : arrêt du feu
+                        break; 
+                    } else if (cell === 2) {
+                        // Mur destructible : détruit + arrêt du feu
+                        this.grid[targetY][targetX] = 0;
+                        affectedTiles.push({ x: targetX, y: targetY });
+                        break;
+                    } else if (cell === 3) {
+                        // Une autre bombe est touchée !
+                        // 1. On nettoie la case pour éviter une boucle infinie
+                        this.grid[targetY][targetX] = 0;
+                        affectedTiles.push({ x: targetX, y: targetY });
+
+                        // 2. Réaction en chaîne : cette bombe explose immédiatement à son tour
+                        const chainTiles = this.calculateExplosion(targetX, targetY, radius);
+                        
+                        // 3. On fusionne les cases brûlées par la seconde bombe
+                        chainTiles.forEach(tile => {
+                            if (!affectedTiles.some(t => t.x === tile.x && t.y === tile.y)) {
+                                affectedTiles.push(tile);
+                            }
+                        });
+
+                        // Le feu continue sa course après avoir fait sauter la bombe
+                    } else {
+                        // Case vide (0)
+                        affectedTiles.push({ x: targetX, y: targetY });
+                    }
+                }
+            });
+
+            return affectedTiles;
+        }
 }
 
 module.exports = Map;
