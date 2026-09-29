@@ -1,0 +1,26 @@
+{
+  "name": "client",
+  "version": "0.1.0",
+  "description": "Client Bomberman Arena - Electron + TypeScript + PixiJS",
+  "main": "main.js",
+  "scripts": {
+    "build": "tsc && tsc -p tsconfig.web.json",
+    "start": "npm run build && electron .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "license": "ISC",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=24.20.0"
+  },
+  "dependencies": {
+    "pixi.js": "^8.20.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.5",
+    "electron": "^44.4.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}
