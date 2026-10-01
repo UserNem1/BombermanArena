@@ -1,17 +1,14 @@
 class Bomb {
-    constructor(x, y, timer, owner, explosionRadius) {
+    constructor(owner, x, y, timer, explosionRadius) {
         this.x = x;
         this.y = y;
         this.timer = timer; // secondes
         this.owner = owner;
         this.explosionRadius = explosionRadius;
-    }
-
-    tick() {
-        this.timer -= 1;
-        if (this.timer <= 0) {
+        // Minuteur simple d'explosion (3 secondes)
+        setTimeout(() => {
             this.explode();
-        }
+        }, timer * 1000);
     }
 
     explode() {
