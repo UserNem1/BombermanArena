@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import { MAX_PLAYERS, LobbyBus, type Player } from './LobbyBus.js';
+import { canStartGame, LobbyBus, MAX_PLAYERS, MIN_PLAYERS, type Player } from './LobbyBus.js';
 
 /** Joueuses de test, chacune sur son personnage (couleurs distinctes). */
 const alix: Player = { id: 'p1', name: 'Alix', characterId: 'perso-1', ready: false };
@@ -198,5 +198,56 @@ describe('LobbyBus', () => {
     bus.setReady(alix.id, true);
 
     expect(listener).not.toHaveBeenCalled();
+  });
+
+  describe('conditions de lancement (règle : 2 à 4 joueurs, tous prêts)', () => {
+    it('refuse une partie en solo, même prêt', () => {
+      const bus = new LobbyBus();
+      bus.join({ ...alix, ready: true });
+
+      expect(MIN_PLAYERS).toBe(2);
+      expect(bus.canStart).toBe(false);
+      expect(canStartGame([{ ...alix, ready: true }])).toBe(false);
+    });
+
+    it('refuse une partie où tout le monde n’est pas prêt', () => {
+      const bus = new LobbyBus();
+      bus.join({ ...alix, ready: true });
+      bus.join(basile);
+
+      expect(bus.canStart).toBe(false);
+    });
+
+    it('accepte deux joueurs prêts', () => {
+      const bus = new LobbyBus();
+      bus.join({ ...alix, ready: true });
+      bus.join({ ...basile, ready: true });
+
+      expect(bus.canStart).toBe(true);
+    });
+
+    it('accepte trois ou quatre joueurs prêts', () => {
+      for (const ready of [3, 4]) {
+        const bus = new LobbyBus();
+        for (let i = 0; i < ready; i++) {
+          bus.join({ id: `p${i}`, name: `J${i}`, characterId: `perso-${i}`, ready: true });
+        }
+        expect(bus.canStart).toBe(true);
+      }
+    });
+
+    it('refuse une partie de plus de quatre joueurs', () => {
+      const players = Array.from({ length: 5 }, (_, i) => ({
+        id: `p${i}`,
+        name: `J${i}`,
+        characterId: `perso-${i}`,
+        ready: true,
+      }));
+      expect(canStartGame(players)).toBe(false);
+    });
+
+    it('refuse une partie quand personne n’est prêt', () => {
+      expect(canStartGame([alix, basile])).toBe(false);
+    });
   });
 });

@@ -26,8 +26,28 @@ export interface Player {
 /** Fonction appelée à chaque changement de la liste des joueurs. */
 export type PlayersListener = (players: readonly Player[]) => void;
 
+/** Nombre minimum de joueurs pour lancer une partie (règle du jeu : on ne
+ *  joue jamais seul). */
+export const MIN_PLAYERS = 2;
+
 /** Nombre maximum de joueurs dans une partie (règle du jeu : 2 à 4). */
 export const MAX_PLAYERS = 4;
+
+/**
+ * Vrai si une partie peut démarrer avec cette liste de joueurs.
+ *
+ * Règle du jeu : il faut au moins `MIN_PLAYERS` joueurs (2), au plus
+ * `MAX_PLAYERS` (4), et tout le monde doit être prêt. Fonction pure : la règle
+ * est ainsi testable seule, et réutilisable par l'écran qui affiche la salle
+ * comme par celui qui lancera la partie.
+ */
+export function canStartGame(players: readonly Player[]): boolean {
+  return (
+    players.length >= MIN_PLAYERS &&
+    players.length <= MAX_PLAYERS &&
+    players.every((p) => p.ready)
+  );
+}
 
 /** Joueur stocké en interne : seul `ready` et `characterId` sont mutables
  *  (états évolutifs). */
@@ -45,6 +65,15 @@ export class LobbyBus {
   /** Les joueurs actuellement présents dans la salle (copies). */
   get players(): readonly Player[] {
     return this.players_.map((p) => ({ ...p }));
+  }
+
+  /**
+   * Vrai si la partie peut démarrer (de 2 à 4 joueurs, tous prêts). C'est
+   * cette information qui autorisera le lancement : une partie ne se lance
+   * jamais en solo.
+   */
+  get canStart(): boolean {
+    return canStartGame(this.players_);
   }
 
   /**
