@@ -1,20 +1,19 @@
 /**
- * Point d'entrée du renderer (couche d'affichage).
+ * Point d'entrée du renderer : démarrage de l'application et câblage.
  *
- * Initialise l'application PixiJS (moteur de rendu de tous les écrans du
- * jeu) puis monte le menu principal. L'interface est dessinée dans un
- * espace de conception de 1280x720, mis à l'échelle et centré pour
- * s'adapter à la fenêtre ; le fond uni est celui du canvas.
+ * Initialise PixiJS (moteur de rendu de tous les écrans), crée les deux
+ * écrans — menu principal et salle d'attente — puis les relie au modèle :
+ * les actions de l'utilisateur (retour, prêt, changement de personnage)
+ * remontent vers le bus du lobby, et le bus redessine la salle. L'interface
+ * est dessinée dans un espace de conception de 1280x720, mis à l'échelle et
+ * centré pour s'adapter à la fenêtre ; le fond uni est celui du canvas.
+ *
+ * Ce fichier ne contient que ce qui est propre à l'application : le reste vit
+ * dans des modules testables (`design`, `screens`, `components`, `lobby`,
+ * `previews`).
  */
 
-import {
-  Application,
-  Container,
-  Rectangle,
-  Sprite,
-  Texture,
-  TextureSource,
-} from 'pixi.js';
+import { Application, Container } from 'pixi.js';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './design.js';
 import { Menu } from './screens/Menu.js';
 import { WaitingMenu } from './screens/WaitingMenu.js';
@@ -22,9 +21,7 @@ import { AnimationPersonnageMenu } from './AnimationPersonnageMenu.js';
 import { CHARACTERS } from './lobby/characters.js';
 import { LobbyBus } from './lobby/LobbyBus.js';
 import { LobbyMock } from './lobby/LobbyMock.js';
-import { loadImage } from './imageLoader.js';
-import { firstCellBox } from './firstCell.js';
-import { PICKER_PREVIEW_HEIGHT } from './components/CharacterPicker.js';
+import { CharacterPreviews, type PreviewFactory } from './previews.js';
 
 /** Application PixiJS : contient le renderer, le stage et la boucle de rendu. */
 const app = new Application();
@@ -52,12 +49,17 @@ document.body.appendChild(app.canvas);
 // un seul est monté sur la scène à la fois (le menu au départ).
 const menu = new Menu(showWaiting);
 
+// Aperçus des personnages (première pose de chaque planche) : l'écran
+// d'attente demande une image par joueur à cette fabrique.
+const previews = new CharacterPreviews();
+const getPreview: PreviewFactory = (characterId, height) => previews.get(characterId, height);
+
 // Salle d'attente : le bus d'événements joue les intermédiaires entre le
 // serveur (réel ou simulé) et l'écran. Tant que le backend WebSocket n'a
-// pas défini le protocole, un mock alimente le bus avec de fausses données
-// : on peut ainsi voir la salle se remplir et basculer « prêt » sans serveur.
+// pas défini le protocole, un mock alimente le bus avec de fausses données :
+// on peut ainsi voir la salle se remplir et basculer « prêt » sans serveur.
 const lobby = new LobbyBus();
-const mock = new LobbyMock(lobby, ['KillerBee', 'Bonnie', 'TNT', 'Pixel'], 900);
+const mock = new LobbyMock(lobby, ['LeBGdu80', 'Bread', 'Joe', 'Bob'], 900);
 const waiting = new WaitingMenu(
   showMenu,
   toggleReady,
@@ -66,6 +68,11 @@ const waiting = new WaitingMenu(
   getPreview,
 );
 lobby.on((players) => waiting.setPlayers(players));
+
+// La salle est rafraîchie une fois les planches chargées : les portraits
+// apparaissent alors dans les emplacements, sans nouvelle action de
+// l'utilisateur.
+void previews.load().then(() => waiting.setPlayers(lobby.players));
 
 /** Bascule l'état prêt du joueur local dans le bus. */
 function toggleReady(): void {
@@ -93,53 +100,11 @@ function cycleCharacter(): void {
   }
 }
 
-/**
- * Aperçus des personnages pour le sélecteur en U : la première pose de
- * chaque planche (rognée sur son contenu), chargée en arrière-plan et
- * réduite à la hauteur du sélecteur. Un chargement raté laisse la U vide
- * (jamais de blocage) ; la salle est rafraîchie une fois qu'une image est
- * prête.
- */
-const previews = new Map<string, Sprite>();
-void loadPreviews();
-
-async function loadPreviews(): Promise<void> {
-  for (const character of CHARACTERS) {
-    try {
-      const image = await loadImage(character.sprites);
-      // Seule la première pose est prélevée (les premières lignes de la
-      // planche peuvent être vides) : le portrait n'est pas une planche
-      // écrasée mais une case rognée sur son contenu.
-      const box = firstCellBox(image);
-      const sprite = new Sprite({
-        texture: new Texture({
-          source: TextureSource.from(image),
-          frame: new Rectangle(box.x, box.y, box.width, box.height),
-        }),
-      });
-      sprite.anchor.set(0.5);
-      sprite.height = PICKER_PREVIEW_HEIGHT;
-      sprite.width = (sprite.height * box.width) / box.height;
-      previews.set(character.id, sprite);
-    } catch (error) {
-      console.error(`[renderer] image du perso ${character.id} illisible :`, error);
-    }
-  }
-  waiting.setPlayers(lobby.players);
-}
-
-/** Image du personnage pour le sélecteur, ou `null` si non chargée. */
-function getPreview(characterId: string): Sprite | null {
-  return previews.get(characterId) ?? null;
-}
-
 /** Écran actuellement affiché (menu ou salle d'attente). */
 let current: Container = menu;
 app.stage.addChild(current);
 
-/**
- * Remplace l'écran affiché : démonte l'ancien et monte le nouveau.
- */
+/** Remplace l'écran affiché : démonte l'ancien et monte le nouveau. */
 const showScreen = (next: Container): void => {
   app.stage.removeChild(current);
   current = next;

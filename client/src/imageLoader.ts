@@ -4,7 +4,8 @@
  * `image.decode()` peut rejeter avec EncodingError même quand l'image se
  * charge (caprice de Chromium) : on attend `onload`/`onerror`, fiables.
  * Quelques tentatives espacées évitent qu'un échec ponctuel casse la
- * construction de l'écran (le renderer, à défaut, affiche une pastille).
+ * construction de l'écran — les appelants préférez laisser l'image vide
+ * (emplacement sans portrait) plutôt que de faire échouer l'écran.
  */
 
 /** Nombre de tentatives de chargement d'une image. */
