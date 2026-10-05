@@ -110,8 +110,10 @@ Non couvert : `renderer.ts` et `previews.ts` (dépendent du DOM / du canvas) et
 
 ## Ressources
 
-- `assets/perso1.jpg` … `perso4.jpg` : planches de personnages (la première
-  pose sert de portrait dans la salle d'attente).
+- `assets/perso1.jpg` … `perso6.jpg` : planches de personnages (la première
+  pose sert de portrait dans la salle d'attente). Le catalogue
+  (`src/lobby/characters.ts`) fait foi : chaque entrée doit pointer vers une
+  planche existante, sinon le portrait reste vide.
 - `assets/perso1.png` : sprite utilisé par la démo du menu.
 
 ## Reste à faire (à venir)

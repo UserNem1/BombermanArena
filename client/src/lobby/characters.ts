@@ -51,6 +51,18 @@ export const CHARACTERS: readonly Character[] = [
     color: 0xd02810,
     sprites: 'assets/perso4.jpg',
   },
+  {
+    id: 'perso-5',
+    label: 'Perso 5',
+    color: 0x208040,
+    sprites: 'assets/perso5.jpg',
+  },
+  {
+    id: 'perso-6',
+    label: 'Perso 6',
+    color: 0x502070,
+    sprites: 'assets/perso6.jpg',
+  },
 ];
 
 /**
