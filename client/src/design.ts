@@ -8,7 +8,7 @@
  * un fabriquant de style de titre, afin d'éviter toute duplication.
  */
 
-import { Graphics, Text, TextStyle } from 'pixi.js';
+import { TextStyle } from 'pixi.js';
 
 /** Largeur logique de référence de l'interface (px). */
 export const DESIGN_WIDTH = 1280;
@@ -19,57 +19,8 @@ export const DESIGN_HEIGHT = 720;
 /** Police d'affichage des titres (partagée par tous les écrans). */
 export const DISPLAY_FONT = '"Arial Black", Impact, Arial, sans-serif';
 
-/** Palette partagée de l'interface (couleurs 0xRRGGBB). */
-export const COLORS = {
-  /** Fond des panneaux (boutons, emplacements joueur). */
-  panel: 0x2b2f4a,
-  /** Bordure des panneaux. */
-  border: 0x6c63a8,
-  /** Texte clair (noms, libellés). */
-  text: 0xdfe4ff,
-  /** Texte secondaire (état « pas prêt », emplacement vide). */
-  muted: 0x8a8fb8,
-  /** Accent principal (titres d'écran, sous-titre du menu). */
-  accent: 0x4cc9f0,
-  /** Accent chaud (survol de bouton, progression d'un curseur). */
-  accentHot: 0xf77f00,
-  /** Accent clair (bordure de focus, poignée de curseur). */
-  accentLight: 0x9fd0ff,
-  /** Vert « prêt » (état à rejoindre lorsque la partie peut démarrer). */
-  ready: 0x4ade80,
-  /** Traits de la grille de fond. */
-  gridLine: 0x2a2350,
-} as const;
-
 /** Ordonnée du titre d'un écran, en fraction de la hauteur. */
 export const TITLE_Y = 0.3;
-
-/**
- * Fabriquant du style de texte compact des états (« prêt », « pas prêt »,
- * compteur) : même police, même interligne ; le remplissage varie selon
- * l'état. Centralise le motif partagé par les emplacements joueurs et la
- * synthèse de la salle d'attente.
- *
- * @param fill     Couleur du texte (0xRRGGBB).
- * @param fontSize Taille (px, défaut 16).
- */
-export function statusStyle(fill: number, fontSize = 16): TextStyle {
-  return new TextStyle({
-    fontFamily: 'Arial',
-    fontSize,
-    fontWeight: 'bold',
-    letterSpacing: 2,
-    fill,
-  });
-}
-
-/**
- * Remplit un disque centré sur l'origine du `Graphics` donné (avatar
- * coloré d'un personnage). Retourne le même `Graphics` pour chaînage.
- */
-export function fillDisc(graphics: Graphics, radius: number, color: number): Graphics {
-  return graphics.circle(0, 0, radius).fill(color);
-}
 
 /** Masse de bordure du texte des titres (regularité visuelle). */
 const TITLE_PADDING = 10;
@@ -100,43 +51,4 @@ export function titleStyle(
     stroke: { color: strokeColor, width: strokeWidth },
     padding: TITLE_PADDING,
   });
-}
-
-/** Options de style pour `createCenteredTitle` (voir `titleStyle`). */
-export interface TitleOptions {
-  /** Couleur du texte (0xRRGGBB). */
-  fill: number;
-  /** Taille (px). */
-  fontSize: number;
-  /** Interligne des lettres (px, défaut 4). */
-  letterSpacing?: number;
-  /** Couleur du contour (chaîne CSS). */
-  strokeColor: string;
-  /** Épaisseur du contour (px, défaut 5). */
-  strokeWidth?: number;
-}
-
-/**
- * Fabriquant du titre d'un écran : texte centré horizontalement à l'écran,
- * ancré sur son centre (la position désigne donc le milieu du titre).
- * Centralise le motif commun à tous les écrans (Menu, salle d'attente...).
- *
- * @param text Libellé affiché.
- * @param y    Ordonnée du centre du titre (dans l'espace de conception).
- * @param opts Style du titre.
- */
-export function createCenteredTitle(text: string, y: number, opts: TitleOptions): Text {
-  const title = new Text({
-    text,
-    style: titleStyle(
-      opts.fill,
-      opts.fontSize,
-      opts.letterSpacing ?? 4,
-      opts.strokeColor,
-      opts.strokeWidth ?? 5,
-    ),
-  });
-  title.anchor.set(0.5);
-  title.position.set(DESIGN_WIDTH / 2, y);
-  return title;
 }

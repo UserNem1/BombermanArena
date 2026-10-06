@@ -1,9 +1,9 @@
 {
   /**
    * Configuration TypeScript du renderer (sources regroupées dans src/ :
-   * renderer.ts, screens/Menu.ts, screens/WaitingMenu.ts, components/Button.ts,
-   * components/Grid.ts, lobby/LobbyBus.ts, lobby/LobbyMock.ts,
-   * AnimationPersonnageMenu.ts, planche.ts, design.ts).
+   * renderer.ts, screens/Menu.ts, screens/Options.ts, components/Button.ts,
+   * components/Grid.ts, AnimationPersonnageMenu.ts, planche.ts, design.ts,
+   * Navigation.ts).
    *
    * Ce fichier s'exécute dans le navigateur Chromium d'Electron en tant
    * qu'ES Module (balise <script type="module">) :
