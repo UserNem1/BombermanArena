@@ -1,0 +1,23 @@
+{
+  /**
+   * Configuration TypeScript du processus principal (main.ts) et du
+   * script de préchargement (preload.ts).
+   *
+   * Ces fichiers s'exécutent sur Node/Electron en CommonJS :
+   * - module: "node16" respecte le type commonjs du package.json.
+   * - types: ["node"] fournit les types de l'API Node.js.
+   *
+   * Le rendu est émis en .js à côté des sources .ts (fichiers ignorés par .gitignore).
+   */
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "node16",
+    "moduleResolution": "node16",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"]
+  },
+  "include": ["main.ts", "preload.ts"]
+}
