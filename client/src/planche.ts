@@ -119,39 +119,3 @@ export function detectPixels(
   }
   return boxes;
 }
-
-/**
- * Indice de la première case contenant du contenu (ordre ligne majeure).
- *
- * `detectPixels` renvoie la case entière (avec CROP_PAD) quand elle est
- * vide : une boîte qui coïncide exactement avec ce cas de repli est donc
- * considérée « sans pose ». Sert à prélever la première pose d'une planche
- * dont les premières lignes peuvent être vides (portrait du personnage).
- * Si toutes les cases sont vides, renvoie 0 (la première case, telle quelle).
- */
-export function firstContentCell(
-  boxes: readonly CellRect[],
-  width: number,
-  height: number,
-  cols = SHEET_COLS,
-  rows = SHEET_ROWS,
-  pad = CROP_PAD,
-): number {
-  const isEmpty = (box: CellRect, index: number): boolean => {
-    const col = index % cols;
-    const line = Math.floor(index / cols);
-    const x0 = Math.round((col * width) / cols);
-    const x1 = Math.round(((col + 1) * width) / cols);
-    const y0 = Math.round((line * height) / rows);
-    const y1 = Math.round(((line + 1) * height) / rows);
-    return (
-      box.x === x0 + pad &&
-      box.y === y0 + pad &&
-      box.width === x1 - x0 - 2 * pad &&
-      box.height === y1 - y0 - 2 * pad
-    );
-  };
-
-  const index = boxes.findIndex((box, i) => !isEmpty(box, i));
-  return index === -1 ? 0 : index;
-}
