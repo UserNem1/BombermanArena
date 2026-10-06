@@ -1,20 +1,19 @@
 /**
- * Grille de l'arène.
+ * Grille de l'arène (repère de mise en page).
  *
- * Dessine un quadrillage dans tout l'espace de conception (1280x720).
- * Le pas est CELL_SIZE : les cellules servent à placer les personnages,
- * comme sur un plateau de jeu.
+ * Quadrillage couvrant tout l'espace de conception (1280x720), au pas de
+ * `CELL_SIZE`. Sert à caler les éléments de l'interface « comme sur un
+ * plateau » : elle est affichée en fond du menu et de la salle d'attente,
+ * et ses cellules serviront au placement des personnages dans l'arène.
  */
 
 import { Container, Graphics } from 'pixi.js';
-import { DESIGN_HEIGHT, DESIGN_WIDTH } from '../design.js';
+import { COLORS, DESIGN_HEIGHT, DESIGN_WIDTH } from '../design.js';
 
-/** Taille d'une cellule en pixels (réservée au futur placement des
- *  personnages : réexporter quand la grille sera utilisée hors du dessin). */
+/** Taille d'une cellule en pixels (pas du quadrillage). */
 const CELL_SIZE = 80;
 
-/** Couleur et opacité des traits de la grille. */
-const LINE_COLOR = 0x2a2350;
+/** Opacité des traits de la grille. */
 const LINE_ALPHA = 0.9;
 
 export class Grid extends Container {
@@ -32,7 +31,7 @@ export class Grid extends Container {
       gfx.moveTo(0, y).lineTo(DESIGN_WIDTH, y);
     }
 
-    gfx.stroke({ width: 1, color: LINE_COLOR, alpha: LINE_ALPHA });
+    gfx.stroke({ width: 1, color: COLORS.gridLine, alpha: LINE_ALPHA });
     this.addChild(gfx);
   }
 }
