@@ -26,10 +26,33 @@ jobs:
           echo "Branch: ${{ github.ref }}"
           echo "Commit: ${{ github.sha }}"
 
+  detect-client:
+    name: Detect client
+    runs-on: ubuntu-24.04
+    outputs:
+      has-client: ${{ steps.detect.outputs.has-client }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for client
+        id: detect
+        shell: bash
+        run: |
+          if [ -f "client/package.json" ]; then
+            echo "Client detected"
+            echo "has-client=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No client found"
+            echo "has-client=false" >> "$GITHUB_OUTPUT"
+          fi
+
   client:
     name: Client build and tests
+    needs: detect-client
+    if: needs.detect-client.outputs.has-client == 'true'
     runs-on: ubuntu-24.04
-    if: ${{ hashFiles('client/package.json') != '' }}
 
     defaults:
       run:
