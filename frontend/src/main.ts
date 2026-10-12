@@ -4,6 +4,8 @@ import { InputManager } from './core/InputManager';
 import { NetworkManager } from './core/NetworkManager';
 import { gridToPixel, drawBoard, GRID_WIDTH, GRID_HEIGHT, TILE_SIZE } from './core/grid';
 import { HUD } from './ui/HUD';
+import { Player } from './entities/Player';
+
 
 
 async function main() {
@@ -30,8 +32,9 @@ async function main() {
   board.y = 50;
   gameContainer.addChild(board);
 
-  const playerTexture = await Assets.load('assets/player.png');
-  const player = new Sprite(playerTexture);
+  const spriteSheetTexture = await Assets.load('public/assets/spriteBombermanNormal.png');
+  const player = new Player(spriteSheetTexture);
+
   player.width = TILE_SIZE;
   player.height = TILE_SIZE;
 
@@ -63,15 +66,17 @@ async function main() {
   app.ticker.add(() => {
   let moved = false;
   const speed = 1;
+  let direction: 'up' | 'down' | 'left' | 'right' | undefined;
+
 
   // On teste chaque axe séparément
   let newX = player.x;
   let newY = player.y;
 
-  if (input.isPressed('ArrowUp')) newY -= speed;
-  if (input.isPressed('ArrowDown')) newY += speed;
-  if (input.isPressed('ArrowLeft')) newX -= speed;
-  if (input.isPressed('ArrowRight')) newX += speed;
+  if (input.isPressed('ArrowUp')) { newY -= speed; direction = 'up'; }
+  if (input.isPressed('ArrowDown')) { newY += speed; direction = 'down'; }
+  if (input.isPressed('ArrowLeft')) { newX -= speed; direction = 'left'; }
+  if (input.isPressed('ArrowRight')) { newX += speed; direction = 'right'; }
 
   // Déplacement horizontal, seulement si pas de collision
   if (newX !== player.x && !checkWallCollision(newX, player.y - 50, TILE_SIZE)) {
@@ -84,6 +89,9 @@ async function main() {
     player.y = newY;
     moved = true;
   }
+
+
+  player.update(moved, direction);
 
   if (moved && (player.x !== lastX || player.y !== lastY)) {
     network.send('player:move', { x: player.x, y: player.y });

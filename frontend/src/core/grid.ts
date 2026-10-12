@@ -1,8 +1,17 @@
-import { Container, Graphics } from 'pixi.js';
+import { Application, Assets, Sprite, Container, Graphics } from 'pixi.js';
 
 export const TILE_SIZE = 32;
 export const GRID_WIDTH = 15;
 export const GRID_HEIGHT = 13;
+export var nbMursCassables = 20; // Nombre de murs cassables à placer sur le plateau
+
+const textureMurIncassable = await Assets.load('./public/assets/murIncassable.png');
+const textureMurCassable = await Assets.load('./public/assets/murCassable.png');
+const textureSol = await Assets.load('./public/assets/sol.png');
+
+
+
+
 
 export function gridToPixel(gridX: number, gridY: number) {
   return { x: gridX * TILE_SIZE, y: gridY * TILE_SIZE };
@@ -25,14 +34,24 @@ export function drawBoard(): Container {
       if (isWallTile(x, y)) {
         const murIncassable = new Graphics()
           .rect(0, 0, TILE_SIZE, TILE_SIZE)
-          .fill(0x696969);
+          .fill(textureMurIncassable);
         murIncassable.x = pos.x;
         murIncassable.y = pos.y;
         board.addChild(murIncassable);
-      } else {
-        const sol = new Graphics()
+      } 
+      else if( Math.random() < 0.2 && nbMursCassables > 0) { // 20% de chance de placer un mur cassable
+        const murCassable = new Graphics()
           .rect(0, 0, TILE_SIZE, TILE_SIZE)
-          .fill(0x8fd694);
+          .fill(textureMurCassable);
+        murCassable.x = pos.x;
+        murCassable.y = pos.y;
+        board.addChild(murCassable);
+        nbMursCassables--; // Décrémente le compteur de murs cassables
+      }
+      else{
+         const sol = new Graphics()
+          .rect(0, 0, TILE_SIZE, TILE_SIZE)
+          .fill(textureSol);
         sol.x = pos.x;
         sol.y = pos.y;
         board.addChild(sol);

@@ -13,7 +13,7 @@ export class NetworkManager {
 
     this.socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
-      this.dispatch(message.type, message.payload);
+      this.dispatch(message.type, message.data);
     };
 
     this.socket.onclose = () => {
@@ -33,17 +33,17 @@ export class NetworkManager {
     this.handlers.get(type)!.push(handler);
   }
 
-  private dispatch(type: string, payload: any) {
+  private dispatch(type: string, data: any) {
     const handlers = this.handlers.get(type);
     if (handlers) {
-      handlers.forEach((h) => h(payload));
+      handlers.forEach((h) => h(data));
     }
   }
 
   // Envoyer un message au serveur
-  send(type: string, payload: any) {
+  send(type: string, data: any) {
     if (this.socket.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify({ type, payload }));
+      this.socket.send(JSON.stringify({ type, data }));
     }
   }
 }
