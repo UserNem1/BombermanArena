@@ -20,10 +20,10 @@ wss.on('connection', (ws) => {
     const playerId = Date.now().toString();
     console.log(`Client connecté! ID: ${playerId}`);
 
-    ws.on('message', (message) => {
+ws.on('message', (message) => {
         try {
             const parsedMessage = JSON.parse(message);
-            gameManager.manageMessage(parsedMessage.type, parsedMessage.data);
+            gameManager.manageMessage(ws, playerId, parsedMessage.type, parsedMessage.data);
         } catch (error) {
             console.error('Message invalide ou format JSON incorrect');
         }
@@ -31,8 +31,7 @@ wss.on('connection', (ws) => {
 
     ws.on('close', () => {
         console.log(`Client déconnecté ID: ${playerId}`);
-        players.delete(playerId);
-        if (players.size < 2) gameState = 'LOBBY';
+        gameManager.removePlayer(playerId);
     });
 });
 
