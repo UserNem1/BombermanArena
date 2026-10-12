@@ -22,10 +22,8 @@ wss.on('connection', (ws) => {
 
     ws.on('message', (message) => {
         try {
-            const message = JSON.parse(message);
-
-            gameManager.manageMessage(message.type, message.data);
-
+            const parsedMessage = JSON.parse(message);
+            gameManager.manageMessage(parsedMessage.type, parsedMessage.data);
         } catch (error) {
             console.error('Message invalide ou format JSON incorrect');
         }
@@ -52,7 +50,6 @@ function stopServer() {
 
 module.exports = { startServer, stopServer, wss };
 
-// Lancer le serveur seulement si le fichier est exécuté directement (pas lors des tests)
 if (require.main === module) {
     startServer();
 }

@@ -21,3 +21,85 @@ describe('Mécaniques de la Phase 2', () => {
         expect(map.isWalkable(1, 1)).toBe(true);
     });
 });
+
+describe('Mécaniques de la Phase 3 : Explosions', () => {
+    const Map = require('./Map');
+    let gameMap;
+
+    beforeEach(() => {
+        gameMap = new Map();
+        // On force une grille miniature pour le test
+        // 0 = vide, 1 = mur béton, 2 = mur destructible
+        gameMap.grid = [
+            [1, 1, 1, 1, 1],
+            [1, 0, 2, 0, 1], // Un mur destructible en haut (x:2, y:1)
+            [1, 2, 0, 1, 1], // Le centre est en (x:2, y:2). Mur béton à droite (x:3, y:2)
+            [1, 0, 2, 0, 1],
+            [1, 1, 1, 1, 1]
+        ];
+    });
+
+    test('L\'explosion s\'arrête sur le béton et détruit les caisses', () => {
+        // On simule une bombe au centre (2,2) avec un rayon de 1 case
+        const burnedTiles = gameMap.calculateExplosion(2, 2, 1);
+
+        // 1. Le mur destructible (2,1) doit être transformé en vide (0)
+        expect(gameMap.grid[1][2]).toBe(0);
+
+        // 2. Le mur en béton (3,2) doit rester intact (1)
+        expect(gameMap.grid[2][3]).toBe(1);
+
+        // 3. Les flammes doivent avoir touché la case de la caisse détruite
+        expect(burnedTiles).toContainEqual({ x: 2, y: 1 });
+    });
+
+    describe('Entité Joueur (Player.js)', () => {
+    const Player = require('./Player');
+
+    test('Le joueur se déplace correctement s\'il est vivant', () => {
+        const player = new Player(5, 5, 'Ilyes');
+        
+        player.move('up');
+        expect(player.y).toBe(4); // 5 - 1 = 4
+        expect(player.x).toBe(5); // x ne change pas
+    });
+
+    test('Un joueur mort ne peut plus se déplacer', () => {
+        const player = new Player(5, 5, 'Ilyes');
+        
+        player.die();
+        expect(player.isAlive).toBe(false);
+
+        player.move('down'); // On essaie de le faire bouger
+        // Les coordonnées ne doivent pas avoir changé
+        expect(player.y).toBe(5); 
+        expect(player.x).toBe(5);
+    });
+    });
+
+    describe('Réactions en chaîne', () => {
+    const Map = require('./Map');
+
+    test('Une bombe fait exploser une deuxième bombe dans son rayon', () => {
+        const gameMap = new Map();
+        
+        // Grille de test :
+        // (1,1) = Bombe 1 | (2,1) = Bombe 2 | (3,1) = Caisser destructible (2)
+        gameMap.grid = [
+            [1, 1, 1, 1, 1],
+            [1, 3, 3, 2, 1],
+            [1, 1, 1, 1, 1]
+        ];
+
+        // On fait exploser la première bombe en (1,1) avec une portée de 1
+        // Sans réaction en chaîne, le feu s'arrêterait en (2,1) et ne toucherait JAMAIS la caisse en (3,1)
+        const burnedTiles = gameMap.calculateExplosion(1, 1, 1);
+
+        // La caisse en (3,1) a-t-elle été détruite par la seconde bombe ?
+        expect(gameMap.grid[1][3]).toBe(0);
+        expect(burnedTiles).toContainEqual({ x: 3, y: 1 });
+    });
+});
+
+    
+});
