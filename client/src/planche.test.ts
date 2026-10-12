@@ -79,4 +79,13 @@ describe('detectPixels', () => {
     expect(boxes[0]).toEqual({ x: 0, y: 0, width: 3, height: 10 });
     expect(boxes[2]).toEqual({ x: 7, y: 0, width: 3, height: 10 });
   });
+
+  it('applique la grille par défaut de la planche (3 x 5 = 15 cases)', () => {
+    // Sans options : 3 colonnes x 5 lignes, la grille réelle du menu.
+    const data = makeRgba(90, 150, 0, 0, 0, 0);
+    const boxes = detectPixels(90, 150, data);
+    expect(boxes).toHaveLength(15);
+    // Case vide : entière, rognée de la marge CROP_PAD (1 px).
+    expect(boxes[0]).toEqual({ x: 1, y: 1, width: 28, height: 28 });
+  });
 });
