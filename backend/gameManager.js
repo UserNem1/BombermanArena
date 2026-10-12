@@ -19,8 +19,16 @@ function sendMessage(type, data) {
 }
 
 function broadcast(type, data) {
-    const data = JSON.stringify(data);
-    broadcast({ type: type, data: data });
+    const payload = JSON.stringify({
+        type: type,
+        data: data
+    });
+
+    players.forEach((player) => {
+        if (player.ws.readyState === 1) {
+            player.ws.send(payload);
+        }
+    });
 }
 
 
