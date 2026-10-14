@@ -227,10 +227,12 @@ export class AnimationPersonnageMenu extends Container {
   ): Texture {
     const col = cell % SHEET_COLS;
     const line = Math.floor(cell / SHEET_COLS);
-    const cellX = Math.round((col * sheet.width) / SHEET_COLS);
-    const cellEnd = Math.round(((col + 1) * sheet.width) / SHEET_COLS);
-    const cellY = Math.round((line * sheet.height) / SHEET_ROWS);
-    const cellEndY = Math.round(((line + 1) * sheet.height) / SHEET_ROWS);
+    // Grille régulière de FRAME_SIZE px : bornes de la case calculées
+    // directement (la planche a été rognée à cette grille).
+    const cellX = col * FRAME_SIZE;
+    const cellEnd = cellX + FRAME_SIZE;
+    const cellY = line * FRAME_SIZE;
+    const cellEndY = cellY + FRAME_SIZE;
 
     // Centre horizontalement le contenu dans le cadre (avec garde-fou
     // pour rester dans la case, puis dans l'image).
@@ -335,7 +337,6 @@ export class AnimationPersonnageMenu extends Container {
     this.time = 0;
     this.active.stop();
     this.active.visible = false;
-    this.active.alpha = 1;
 
     if (phase === 'walk') {
       if (keepWalkPos) {
