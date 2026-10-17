@@ -1,13 +1,21 @@
+import { randomUUID } from "node:crypto";
+
 export type Direction = "up" | "down" | "left" | "right";
 
 export class Player {
   constructor(
-    public readonly id: string,
+    public readonly id: string = randomUUID(),
     public x = 1,
     public y = 1,
     public name = "Player 1",
     public health = 5,
-  ) {}
+  ) {
+    this.id = id;
+    this.x = x;
+    this.y = y;
+    this.name = name;
+    this.health = health;
+  }
 
   debug(): void {
     console.log(`Position du joueur: (${this.x}, ${this.y})`);

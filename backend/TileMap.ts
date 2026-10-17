@@ -17,4 +17,8 @@ export class TileMap {
   isWalkable(x: number, y: number): boolean {
     return this.getTile(x, y)?.walkable ?? false;
   }
+
+  idBreakable(x: number, y: number): boolean {
+    return this.getTile(x, y)?.breakable ?? false;
+  }
 }

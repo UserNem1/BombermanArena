@@ -1,8 +1,9 @@
 import { WebSocket } from "ws";
 import { Bomb } from "./Bomb";
 import { Player, type Direction } from "./Player";
-import { Tile } from "./Tile";
 import { TileMap } from "./TileMap";
+import { TileSet } from "./TileSet";
+const tileset = new TileSet();
 
 export type ClientMessage = { type: string; data?: unknown };
 
@@ -22,10 +23,7 @@ export class GameManager {
   private gameState: "LOBBY" | "IN_GAME" = "LOBBY";
   private readonly gameMap = new TileMap(
     Array.from({ length: 11 }, (_, y) =>
-      Array.from(
-        { length: 13 },
-        (_, x) => new Tile(x > 0 && y > 0 && x < 12 && y < 10),
-      ),
+      Array.from({ length: 13 }, (_, x) => tileset.get_tile("floor")),
     ),
   );
 

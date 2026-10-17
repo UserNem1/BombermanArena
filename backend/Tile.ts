@@ -1,3 +1,7 @@
 export class Tile {
-  constructor(public readonly walkable: boolean) {}
+  constructor(
+    public readonly id: string,
+    public readonly walkable: boolean,
+    public readonly breakable: boolean,
+  ) {}
 }
