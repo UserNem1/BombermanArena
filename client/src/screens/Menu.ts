@@ -16,6 +16,7 @@ import {
   titleStyle,
 } from '../design.js';
 import { Grid } from '../components/Grid.js';
+import { connectToServer } from '../net/connection.js';
 
 /** Couleurs du menu (0xRRGGBB). */
 const TITLE_COLOR = 0xffd166;
@@ -67,7 +68,8 @@ export class Menu extends Container {
     // Libellé de chaque bouton et action associée. Un tableau de paires
     // [texte, fonction] évite de répéter trois fois le même code.
     const entries: [string, () => void][] = [
-      ['JOUER', () => console.log('[menu] Jouer')],
+      // JOUER ouvre la connexion WebSocket vers le backend (menu de connexion).
+      ['JOUER', () => connectToServer()],
       // L'écran Options arrive sur une branche dédiée : simple trace ici.
       ['OPTIONS', () => console.log('[menu] Options (à venir)')],
       ['QUITTER', () => window.close()],

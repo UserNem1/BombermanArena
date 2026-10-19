@@ -18,8 +18,7 @@ function isClientMessage(value: unknown): value is ClientMessage {
 
 wss.on("connection", (socket) => {
   const playerId = randomUUID();
-  gameManager.connect(playerId, socket);
-  console.log(`Client connecté! ID: ${playerId}`);
+  gameManager.connect(playerId, socket, wss.clients.size);
 
   socket.on("message", (raw: RawData) => {
     try {
@@ -45,8 +44,10 @@ wss.on("connection", (socket) => {
   });
 
   socket.on("close", () => {
-    console.log(`Client déconnecté ID: ${playerId}`);
     gameManager.disconnect(playerId);
+    console.log(
+      `Client déconnecté ID: ${playerId} (${wss.clients.size} connecté(s))`,
+    );
   });
 });
 
