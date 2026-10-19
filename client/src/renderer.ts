@@ -45,7 +45,7 @@ app.stage.addChild(menu);
 // journalise l'erreur et on continue sans la démo.
 let demo: AnimationPersonnageMenu | null = null;
 try {
-  demo = await AnimationPersonnageMenu.load('assets/perso1.png');
+  demo = await AnimationPersonnageMenu.load('assets/spriteBombermanMenu.png');
   menu.addChildAt(demo, 1);
 } catch (error) {
   console.error('[renderer] chargement du perso impossible :', error);
