@@ -44,10 +44,7 @@ wss.on("connection", (socket) => {
   });
 
   socket.on("close", () => {
-    gameManager.disconnect(playerId);
-    console.log(
-      `Client déconnecté ID: ${playerId} (${wss.clients.size} connecté(s))`,
-    );
+    gameManager.disconnect(playerId, wss.clients.size);
   });
 });
 

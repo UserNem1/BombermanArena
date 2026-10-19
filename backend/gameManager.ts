@@ -34,13 +34,16 @@ export class GameManager {
     );
   }
 
-  disconnect(playerId: string): void {
+  disconnect(playerId: string, nombre_joueurs: number): void {
     this.clients.delete(playerId);
     this.players.delete(playerId);
     if (this.players.size < 2) {
       this.gameState = "LOBBY";
     }
     this.broadcast("LOBBY_UPDATE", { playerCount: this.players.size });
+    console.log(
+      `Client déconnecté ID: ${playerId} (${nombre_joueurs} connecté(s))`,
+    );
   }
 
   handleMessage(playerId: string, message: ClientMessage): void {
