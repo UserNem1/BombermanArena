@@ -27,8 +27,11 @@ export class GameManager {
     ),
   );
 
-  connect(playerId: string, socket: WebSocket): void {
+  connect(playerId: string, socket: WebSocket, nombre_joueurs: number): void {
     this.clients.set(playerId, socket);
+    console.log(
+      `Client connecté! ID: ${playerId} (${nombre_joueurs} connecté(s))`,
+    );
   }
 
   disconnect(playerId: string): void {

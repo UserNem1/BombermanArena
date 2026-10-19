@@ -7,21 +7,22 @@
  * via `coverBackdrop`.
  */
 
-import { Container, Sprite, Text, Texture } from 'pixi.js';
-import { Button } from '../components/Button.js';
+import { Container, Sprite, Text, Texture } from "pixi.js";
+import { Button } from "../components/Button.js";
 import {
   COLORS,
   DESIGN_HEIGHT,
   DESIGN_WIDTH,
   TITLE_Y,
   createCenteredTitle,
-} from '../design.js';
-import { Grid } from '../components/Grid.js';
+} from "../design.js";
+import { Grid } from "../components/Grid.js";
+import { connectToServer } from "../net/connection.js";
 
 /** Couleurs du menu (0xRRGGBB). */
 const TITLE_COLOR = 0xffd166;
-const TITLE_STROKE = '#4a1d00';
-const SUBTITLE_STROKE = '#0b2545';
+const TITLE_STROKE = "#4a1d00";
+const SUBTITLE_STROKE = "#0b2545";
 
 /** Décalage du sous-titre sous le titre (px). */
 const SUBTITLE_OFFSET = 58;
@@ -58,7 +59,7 @@ export class Menu extends Container {
 
     // Titre principal, puis sous-titre centrés ; `createCenteredTitle`
     // gère l'ancrage au centre et le style partagé.
-    const title = createCenteredTitle('BOMBERMAN', DESIGN_HEIGHT * TITLE_Y, {
+    const title = createCenteredTitle("BOMBERMAN", DESIGN_HEIGHT * TITLE_Y, {
       fill: TITLE_COLOR,
       fontSize: 64,
       letterSpacing: 6,
@@ -66,7 +67,7 @@ export class Menu extends Container {
       strokeWidth: 7,
     });
     const subtitle = createCenteredTitle(
-      'ARENA',
+      "ARENA",
       DESIGN_HEIGHT * TITLE_Y + SUBTITLE_OFFSET,
       {
         fill: COLORS.accent,
@@ -83,15 +84,19 @@ export class Menu extends Container {
     // Libellé de chaque bouton et action associée. Un tableau de paires
     // [texte, fonction] évite de répéter trois fois le même code.
     const entries: [string, () => void][] = [
-      ['JOUER', onPlay],
+      // JOUER ouvre la connexion WebSocket vers le backend (menu de connexion).
+      ["JOUER", () => connectToServer()],
       // L'écran Options arrive sur une branche dédiée : simple trace ici.
-      ['OPTIONS', () => console.log('[menu] Options (à venir)')],
-      ['QUITTER', () => window.close()],
+      ["OPTIONS", () => console.log("[menu] Options (à venir)")],
+      ["QUITTER", () => window.close()],
     ];
     entries.forEach(([label, onClick], index) => {
       const button = new Button(label, onClick);
       // Les boutons sont empilés verticalement à partir de BUTTONS_Y.
-      button.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * BUTTONS_Y + index * BUTTON_GAP);
+      button.position.set(
+        DESIGN_WIDTH / 2,
+        DESIGN_HEIGHT * BUTTONS_Y + index * BUTTON_GAP,
+      );
       this.addChild(button);
     });
   }
@@ -117,11 +122,11 @@ export class Menu extends Container {
    * exactement les redimensionnements du décor.
    */
   addToBackdrop(child: Container): boolean {
-     if (!this.backdrop) {
-       return false;
-   }
+    if (!this.backdrop) {
+      return false;
+    }
 
-     this.backdrop.addChild(child);
-       return true;
-   }  
+    this.backdrop.addChild(child);
+    return true;
+  }
 }
