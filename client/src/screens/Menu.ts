@@ -1,13 +1,13 @@
 /**
  * Menu principal du jeu.
  *
- * Construit le titre et les trois boutons dans l'espace de conception
- * (1280x720). Le renderer se charge de mettre cette scène à l'échelle et
- * de la centrer dans la fenêtre ; le fond uni, lui, est géré par le
- * canvas PixiJS.
+ * Construit le fond (image du menu), le titre et les trois boutons dans
+ * l'espace de conception (1280x720). Le renderer met cette scène à
+ * l'échelle et la centre, puis étire le fond pour couvrir toute la fenêtre
+ * via `coverBackdrop`.
  */
 
-import { Container, Text } from 'pixi.js';
+import { Container, Sprite, Text, Texture } from 'pixi.js';
 import { Button } from '../components/Button.js';
 import {
   DESIGN_HEIGHT,
@@ -35,12 +35,26 @@ const BUTTON_GAP = 64;
  * peut déplacer, mettre à l'échelle et afficher d'un seul bloc.
  */
 export class Menu extends Container {
-  constructor() {
+  /** Fond conservé pour pouvoir le redimensionner à chaque changement de
+   *  taille de la fenêtre. Absent si le chargement de l'image a échoué. */
+  private readonly backdrop?: Sprite;
+
+  /**
+   * @param background Image de fond du menu (1920x1080). À défaut, on
+   *   retombe sur la grille de l'arène (utile si le chargement échoue).
+   */
+  constructor(background?: Texture) {
     super();
 
-    // Décor de fond : la grille de l'arène, ajoutée en premier pour
-    // rester derrière le titre et les boutons.
-    this.addChild(new Grid());
+    // Décor de fond, ajouté en premier pour rester derrière le titre et
+    // les boutons : l'image du menu si elle est fournie, sinon la grille.
+    if (background) {
+      this.backdrop = new Sprite(background);
+      this.backdrop.anchor.set(0.5);
+      this.addChild(this.backdrop);
+    } else {
+      this.addChild(new Grid());
+    }
 
     // Titre principal. `Text` dessine du texte et `TextStyle` décrit son
     // apparence (police, taille, couleur, contour...).
@@ -79,4 +93,33 @@ export class Menu extends Container {
       this.addChild(button);
     });
   }
+
+  /**
+   * Redimensionne le fond pour couvrir toute la zone visible de l'écran.
+   * La zone est exprimée dans le repère du menu (espace de conception) :
+   * elle déborde donc de la grille quand la fenêtre n'est pas en 16:9, ce
+   * qui évite les bandes du letterbox autour de l'image. L'image garde son
+   * ratio (recadrage centré). Sans fond, cette méthode ne fait rien.
+   */
+  coverBackdrop(x: number, y: number, width: number, height: number): void {
+    if (!this.backdrop) {
+      return;
+    }
+    const image = this.backdrop.texture;
+    const cover = Math.max(width / image.width, height / image.height);
+    this.backdrop.setSize(image.width * cover, image.height * cover);
+    this.backdrop.position.set(x + width / 2, y + height / 2);
+  }
+  /**
+   * Ajoute un élément dans le repère du fond : il suivra donc
+   * exactement les redimensionnements du décor.
+   */
+  addToBackdrop(child: Container): boolean {
+     if (!this.backdrop) {
+       return false;
+   }
+
+     this.backdrop.addChild(child);
+       return true;
+   }  
 }

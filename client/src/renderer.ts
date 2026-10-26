@@ -7,7 +7,7 @@
  * s'adapter à la fenêtre ; le fond uni est celui du canvas.
  */
 
-import { Application } from 'pixi.js';
+import { Application, Assets,Container, Texture } from 'pixi.js';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './design.js';
 import { Menu } from './screens/Menu.js';
 import { AnimationPersonnageMenu } from './AnimationPersonnageMenu.js';
@@ -33,20 +33,46 @@ await app.init({
 // Insère le canvas créé par PixiJS dans la page HTML.
 document.body.appendChild(app.canvas);
 
+// Fond du menu (image 1920x1080). Un échec de chargement ne doit pas
+// casser l'écran : on journalise et Menu retombe sur la grille par défaut.
+let background: Texture | null = null;
+try {
+  background = await Assets.load('assets/menu-background.png');
+} catch (error) {
+  console.error('[renderer] chargement du fond du menu impossible :', error);
+}
+
 // `app.stage` est la racine de l'arbre d'affichage : tout objet qui y est
 // ajouté est dessiné à l'écran. On y place le menu principal.
-const menu = new Menu();
+const menu = new Menu(background ?? undefined);
 app.stage.addChild(menu);
 
-// Démonstration animée (test) : le personnage traverse l'écran, saute
-// puis disparaît, en boucle. Le sprite est inséré en dessous du texte
-// (index 1). La taille se règle dans AnimationPersonnageMenu.ts (DISPLAY_HEIGHT).
-// Un échec de chargement ne doit pas casser le menu entier : on
-// journalise l'erreur et on continue sans la démo.
 let demo: AnimationPersonnageMenu | null = null;
 try {
   demo = await AnimationPersonnageMenu.load('assets/perso1.png');
-  menu.addChildAt(demo, 1);
+
+  if (demo && background) {
+    // Le perso utilise des coordonnées 1280x720.
+    // Le fond fait 1920x1080 : on convertit ses coordonnées.
+    const charWrapper = new Container();
+
+    charWrapper.scale.set(
+      background.width / DESIGN_WIDTH,
+      background.height / DESIGN_HEIGHT,
+    );
+
+    // Le fond a une ancre au centre : on ramène donc le perso
+    // dans le coin haut-gauche de l'image.
+    charWrapper.position.set(
+      -background.width / 2,
+      -background.height / 2,
+    );
+
+    charWrapper.addChild(demo);
+    menu.addToBackdrop(charWrapper);
+  } else if (demo) {
+    menu.addChildAt(demo, 1);
+  }
 } catch (error) {
   console.error('[renderer] chargement du perso impossible :', error);
 }
@@ -71,11 +97,24 @@ app.ticker.add(() => {
  */
 const layout = (): void => {
   const { width, height } = app.screen;
-  const scale = Math.min(width / DESIGN_WIDTH, height / DESIGN_HEIGHT);
+
+  // Échelle qui fait tenir le menu 1280x720 dans la fenêtre.
+  const fitScale = Math.min(width / DESIGN_WIDTH, height / DESIGN_HEIGHT);
+
+  // L'UI ne rétrécit jamais en dessous de 75 % de sa taille normale.
+  const scale = Math.max(fitScale, 0.85);
+
+  const offsetX = (width - DESIGN_WIDTH * scale) / 2;
+  const offsetY = (height - DESIGN_HEIGHT * scale) / 2;
+
   menu.scale.set(scale);
-  menu.position.set(
-    (width - DESIGN_WIDTH * scale) / 2,
-    (height - DESIGN_HEIGHT * scale) / 2,
+  menu.position.set(offsetX, offsetY);
+
+  menu.coverBackdrop(
+    -offsetX / scale,
+    -offsetY / scale,
+    width / scale,
+    height / scale,
   );
 };
 
