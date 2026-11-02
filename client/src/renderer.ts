@@ -11,6 +11,7 @@ import { Application } from 'pixi.js';
 import { DESIGN_HEIGHT, DESIGN_WIDTH } from './design.js';
 import { Menu } from './screens/Menu.js';
 import { AnimationPersonnageMenu } from './AnimationPersonnageMenu.js';
+import { menuMusic } from './audio/MenuMusic.js';
 
 /** Application PixiJS : contient le renderer, le stage et la boucle de rendu. */
 const app = new Application();
@@ -32,6 +33,12 @@ await app.init({
 
 // Insère le canvas créé par PixiJS dans la page HTML.
 document.body.appendChild(app.canvas);
+
+// Musique des écrans hors partie. Le lecteur est partagé et indépendant de
+// l'écran affiché : il continue donc dans les options et la salle d'attente.
+// Il suffira de le mettre en pause (`menuMusic.pause()`) au lancement d'une
+// partie.
+menuMusic.play();
 
 // `app.stage` est la racine de l'arbre d'affichage : tout objet qui y est
 // ajouté est dessiné à l'écran. On y place le menu principal.
