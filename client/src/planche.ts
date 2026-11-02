@@ -1,5 +1,5 @@
 /**
- * Logique PURE de découpe de la planche de poses (perso1.png).
+ * Logique PURE de découpe de la planche de poses (spriteBombermanMenu.png).
  *
  * Ce module ne touche ni au DOM, ni à Pixi : uniquement des calculs sur
  * un tampon de pixels brute (RGBA). Il est testable unitairement sans
@@ -16,7 +16,7 @@
  * Structure de la planche (grille de poses).
  */
 export const SHEET_COLS = 3;
-export const SHEET_ROWS = 6;
+export const SHEET_ROWS = 5;
 
 /**
  * Seuil (somme des écarts à 255) au-delà duquel un pixel est du contenu.
