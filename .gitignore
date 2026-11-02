@@ -8,3 +8,7 @@ out/
 
 # TypeScript compiled output (client)
 client/**/*.js
+
+# Planche source des personnages (fichier de travail, non versionné :
+# les planches utilisées par le jeu sont dans client/assets/)
+/Persos.jpg
