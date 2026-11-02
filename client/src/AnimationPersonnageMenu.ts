@@ -9,13 +9,14 @@
  * C'est une machine à états basée sur le temps (aucune entrée joueur),
  * pilotée par la boucle de rendu Pixi via `update(dt)`.
  *
- * La planche `perso1.png` (fond transparent) est une grille de 3 colonnes x 6 lignes :
- * - ligne 1 : marche avant (face)    (réservé)
- * - ligne 2 : marche arrière         (réservé)
- * - ligne 3 : marche gauche          (réservé)
- * - ligne 4 : cases 1-2 = saut, case 3 = 1re pose de mort
- * - ligne 5 : cases 1-2 = poses de mort 2 et 3
- * - ligne 6 : marche droite          — utilisée pour la traversée
+ * La planche `spriteBombermanMenu.png` (fond transparent) est une grille
+ * de 3 colonnes x 5 lignes (cases de 32 px ; le fichier source est plus
+ * grand, le reste étant vide) :
+ * - ligne 1 : marche avant (face)
+ * - ligne 2 : marche droite          — utilisée pour la traversée
+ * - ligne 3 : marche arrière
+ * - ligne 4 : marche gauche
+ * - ligne 5 : case 1 = mort, case 2 = saut
  *
  * Chaque case est rognée sur son contenu réel puis alignée dans un
  * cadre commun (pieds au même niveau) : aucune à-coupe d'échelle en
@@ -26,11 +27,14 @@
 import { AnimatedSprite, Container, Rectangle, Texture, TextureSource } from 'pixi.js';
 import { SHEET_COLS, SHEET_ROWS, detectPixels } from './planche.js';
 
-/** Cases utilisées par séquence (indice = ligne * COLS + colonne). */
-const WALK_CELLS = [15, 16, 17]; // ligne 6 : marche droite
-const INTRO_CELLS = [0, 6, 15, 3, 0]; // face, gauche, droite, dos, face : présentation
-const JUMP_CELLS = [9, 10]; // ligne 4, cases 1-2 : saut
-const DEATH_CELLS = [11, 12, 13]; // fin ligne 4 + début ligne 5 : mort
+/** Taille d'une case de la planche source (px). */
+const FRAME_SIZE = 32;
+
+/** Cases utilisées par séquence (indice = ligne * SHEET_COLS + colonne). */
+const WALK_CELLS = [3, 4, 5]; // ligne 2 : marche droite
+const INTRO_CELLS = [0, 9, 3, 6, 0]; // face, gauche, droite, dos, face : présentation
+const JUMP_CELLS = [13]; // ligne 5, case 2 : saut
+const DEATH_CELLS = [12]; // ligne 5, case 1 : mort
 
 /** Nombre de tentatives de chargement de la planche (lecture fichier
  *  parfois instable : un échec ponctuel ne doit pas casser la démo). */
@@ -80,8 +84,9 @@ const PAUSE_DURATION = 1.0;
 type Phase = 'walk' | 'intro' | 'jump' | 'die' | 'pause';
 
 /**
- * Contient les trois animations du personnage et anime la position,
- * l'échelle et l'opacité de celle qui doit être visible.
+ * Contient les quatre animations du personnage (marche, présentation,
+ * saut, mort) et anime la position, l'échelle et l'opacité de celle qui
+ * doit être visible.
  */
 export class AnimationPersonnageMenu extends Container {
   private readonly walk: AnimatedSprite;
@@ -127,8 +132,30 @@ export class AnimationPersonnageMenu extends Container {
    */
   static async load(url: string): Promise<AnimationPersonnageMenu> {
     const image = await AnimationPersonnageMenu.loadImage(url);
-    const source = TextureSource.from(image);
-    return AnimationPersonnageMenu.buildFrom(source, image);
+    const sheet = AnimationPersonnageMenu.cropSheet(image);
+    const source = TextureSource.from(sheet);
+    // Pixel art agrandi : filtrage « nearest » pour des contours nets
+    // plutôt que le flou du filtrage linéaire par défaut.
+    source.scaleMode = 'nearest';
+    return AnimationPersonnageMenu.buildFrom(source, sheet);
+  }
+
+  /**
+   * Ne garde que la grille utile (SHEET_COLS x SHEET_ROWS cases de
+   * FRAME_SIZE px, en haut à gauche) : le fichier source est plus grand
+   * mais le reste est vide. La grille utile est ainsi alignée sur le coin
+   * haut-gauche, ce dont dépendent les calculs de cases.
+   */
+  private static cropSheet(image: HTMLImageElement): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    canvas.width = SHEET_COLS * FRAME_SIZE;
+    canvas.height = SHEET_ROWS * FRAME_SIZE;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Canvas 2D indisponible');
+    }
+    ctx.drawImage(image, 0, 0);
+    return canvas;
   }
 
   /**
@@ -154,8 +181,8 @@ export class AnimationPersonnageMenu extends Container {
     }
   }
 
-  static buildFrom(source: TextureSource, image: HTMLImageElement): AnimationPersonnageMenu {
-    const boxes = AnimationPersonnageMenu.detectCellBoxes(image);
+  private static buildFrom(source: TextureSource, sheet: HTMLCanvasElement): AnimationPersonnageMenu {
+    const boxes = AnimationPersonnageMenu.detectCellBoxes(sheet);
     // Un cadre PAR séquence : les poses de saut/de mort sont plus compactes
     // que la marche ; un cadre global trop grand coupait le haut de la
     // marche et laissait un vide sous les pieds.
@@ -167,7 +194,7 @@ export class AnimationPersonnageMenu extends Container {
       const Wc = Math.max(...cells.map((i) => boxes[i].width));
       const Hc = Math.max(...cells.map((i) => boxes[i].height));
       const list = cells.map((i) =>
-        AnimationPersonnageMenu.cropTexture(source, image, boxes[i], i, Wc, Hc),
+        AnimationPersonnageMenu.cropTexture(source, sheet, boxes[i], i, Wc, Hc),
       );
       const anim = new AnimatedSprite(list);
       anim.animationSpeed = speed;
@@ -192,7 +219,7 @@ export class AnimationPersonnageMenu extends Container {
    */
   private static cropTexture(
     source: TextureSource,
-    image: HTMLImageElement,
+    sheet: HTMLCanvasElement,
     b: Rectangle,
     cell: number,
     Wc: number,
@@ -200,10 +227,12 @@ export class AnimationPersonnageMenu extends Container {
   ): Texture {
     const col = cell % SHEET_COLS;
     const line = Math.floor(cell / SHEET_COLS);
-    const cellX = Math.round((col * image.width) / SHEET_COLS);
-    const cellEnd = Math.round(((col + 1) * image.width) / SHEET_COLS);
-    const cellY = Math.round((line * image.height) / SHEET_ROWS);
-    const cellEndY = Math.round(((line + 1) * image.height) / SHEET_ROWS);
+    // Grille régulière de FRAME_SIZE px : bornes de la case calculées
+    // directement (la planche a été rognée à cette grille).
+    const cellX = col * FRAME_SIZE;
+    const cellEnd = cellX + FRAME_SIZE;
+    const cellY = line * FRAME_SIZE;
+    const cellEndY = cellY + FRAME_SIZE;
 
     // Centre horizontalement le contenu dans le cadre (avec garde-fou
     // pour rester dans la case, puis dans l'image).
@@ -217,8 +246,8 @@ export class AnimationPersonnageMenu extends Container {
     const cropY = Math.min(Math.max(b.y + b.height - Hc, cellY), cellEndY - Hc);
 
     // Dernier recadrage de sécurité dans l'image.
-    const safeX = Math.min(Math.max(cropX, 0), image.width - Wc);
-    const safeY = Math.min(Math.max(cropY, 0), image.height - Hc);
+    const safeX = Math.min(Math.max(cropX, 0), sheet.width - Wc);
+    const safeY = Math.min(Math.max(cropY, 0), sheet.height - Hc);
 
     return new Texture({ source, frame: new Rectangle(safeX, safeY, Wc, Hc) });
   }
@@ -228,17 +257,15 @@ export class AnimationPersonnageMenu extends Container {
    * ignoré) de chaque case de la grille. Délègue les calculs purs à
    * `detectPixels` (planche.ts) : ici on ne fait que décoder l'image.
    */
-  private static detectCellBoxes(image: HTMLImageElement): Rectangle[] {
-    const canvas = document.createElement('canvas');
-    canvas.width = image.width;
-    canvas.height = image.height;
-    const ctx = canvas.getContext('2d');
+  private static detectCellBoxes(sheet: HTMLCanvasElement): Rectangle[] {
+    // La planche est déjà un canvas : on lit directement ses pixels,
+    // sans recopie intermédiaire.
+    const ctx = sheet.getContext('2d');
     if (!ctx) {
       throw new Error('Canvas 2D indisponible');
     }
-    ctx.drawImage(image, 0, 0);
-    const { data } = ctx.getImageData(0, 0, image.width, image.height);
-    return detectPixels(image.width, image.height, data).map(
+    const { data } = ctx.getImageData(0, 0, sheet.width, sheet.height);
+    return detectPixels(sheet.width, sheet.height, data).map(
       (box) => new Rectangle(box.x, box.y, box.width, box.height),
     );
   }
@@ -310,7 +337,6 @@ export class AnimationPersonnageMenu extends Container {
     this.time = 0;
     this.active.stop();
     this.active.visible = false;
-    this.active.alpha = 1;
 
     if (phase === 'walk') {
       if (keepWalkPos) {

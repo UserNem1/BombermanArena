@@ -103,5 +103,13 @@ describe('firstContentCell', () => {
     const data = makeRgba(6, 6, 255, 255, 255, 255);
     const boxes = detectPixels(6, 6, data, { cols: 3, rows: 1, pad: 0 });
     expect(firstContentCell(boxes, 6, 6, 3, 1, 0)).toBe(0);
+
+  it('applique la grille par défaut de la planche (3 x 5 = 15 cases)', () => {
+    // Sans options : 3 colonnes x 5 lignes, la grille réelle du menu.
+    const data = makeRgba(90, 150, 0, 0, 0, 0);
+    const boxes = detectPixels(90, 150, data);
+    expect(boxes).toHaveLength(15);
+    // Case vide : entière, rognée de la marge CROP_PAD (1 px).
+    expect(boxes[0]).toEqual({ x: 1, y: 1, width: 28, height: 28 });
   });
 });
