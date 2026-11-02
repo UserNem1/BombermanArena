@@ -7,19 +7,19 @@
  * canvas PixiJS.
  */
 
-import { Container } from 'pixi.js';
+import { Container, Text } from 'pixi.js';
 import { Button } from '../components/Button.js';
 import {
-  COLORS,
   DESIGN_HEIGHT,
   DESIGN_WIDTH,
   TITLE_Y,
-  createCenteredTitle,
+  titleStyle,
 } from '../design.js';
 import { Grid } from '../components/Grid.js';
 
 /** Couleurs du menu (0xRRGGBB). */
 const TITLE_COLOR = 0xffd166;
+const SUBTITLE_COLOR = 0x4cc9f0;
 const TITLE_STROKE = '#4a1d00';
 const SUBTITLE_STROKE = '#0b2545';
 
@@ -35,33 +35,31 @@ const BUTTON_GAP = 64;
  * peut déplacer, mettre à l'échelle et afficher d'un seul bloc.
  */
 export class Menu extends Container {
-  constructor(onPlay: () => void) {
+  constructor() {
     super();
 
     // Décor de fond : la grille de l'arène, ajoutée en premier pour
     // rester derrière le titre et les boutons.
     this.addChild(new Grid());
 
-    // Titre principal, puis sous-titre centrés ; `createCenteredTitle`
-    // gère l'ancrage au centre et le style partagé.
-    const title = createCenteredTitle('BOMBERMAN', DESIGN_HEIGHT * TITLE_Y, {
-      fill: TITLE_COLOR,
-      fontSize: 64,
-      letterSpacing: 6,
-      strokeColor: TITLE_STROKE,
-      strokeWidth: 7,
+    // Titre principal. `Text` dessine du texte et `TextStyle` décrit son
+    // apparence (police, taille, couleur, contour...).
+    const title = new Text({
+      text: 'BOMBERMAN',
+      style: titleStyle(TITLE_COLOR, 64, 6, TITLE_STROKE, 7),
     });
-    const subtitle = createCenteredTitle(
-      'ARENA',
-      DESIGN_HEIGHT * TITLE_Y + SUBTITLE_OFFSET,
-      {
-        fill: COLORS.accent,
-        fontSize: 34,
-        letterSpacing: 20,
-        strokeColor: SUBTITLE_STROKE,
-        strokeWidth: 5,
-      },
-    );
+    // `anchor` place l'origine du texte en son centre : la position
+    // indiquée correspond donc au centre du texte, pas à son coin.
+    title.anchor.set(0.5);
+    title.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * TITLE_Y);
+
+    // Sous-titre, centré sous le titre.
+    const subtitle = new Text({
+      text: 'ARENA',
+      style: titleStyle(SUBTITLE_COLOR, 34, 20, SUBTITLE_STROKE, 5),
+    });
+    subtitle.anchor.set(0.5);
+    subtitle.position.set(DESIGN_WIDTH / 2, DESIGN_HEIGHT * TITLE_Y + SUBTITLE_OFFSET);
 
     // Ajoute les deux textes au menu.
     this.addChild(title, subtitle);
@@ -69,7 +67,7 @@ export class Menu extends Container {
     // Libellé de chaque bouton et action associée. Un tableau de paires
     // [texte, fonction] évite de répéter trois fois le même code.
     const entries: [string, () => void][] = [
-      ['JOUER', onPlay],
+      ['JOUER', () => console.log('[menu] Jouer')],
       // L'écran Options arrive sur une branche dédiée : simple trace ici.
       ['OPTIONS', () => console.log('[menu] Options (à venir)')],
       ['QUITTER', () => window.close()],
