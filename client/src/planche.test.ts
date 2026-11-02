@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { detectPixels } from './planche.js';
+import { detectPixels, firstContentCell } from './planche.js';
 
 /**
  * Tampon RGBA (w x h) uniformément rempli.
@@ -79,6 +79,30 @@ describe('detectPixels', () => {
     expect(boxes[0]).toEqual({ x: 0, y: 0, width: 3, height: 10 });
     expect(boxes[2]).toEqual({ x: 7, y: 0, width: 3, height: 10 });
   });
+});
+
+describe('firstContentCell', () => {
+  it('ignore les cases vides avant la première pose', () => {
+    // 6x6, 3x1 cases (ligne de 3 cases de 2x6) : contenu dans la 3e case.
+    const data = makeRgba(6, 6, 0, 0, 0, 0);
+    setPixel(data, 6, 5, 3, 255, 0, 0, 255); // col 2 -> indice 2
+    const boxes = detectPixels(6, 6, data, { cols: 3, rows: 1, pad: 0 });
+    expect(firstContentCell(boxes, 6, 6, 3, 1, 0)).toBe(2);
+  });
+
+  it('renvoie 0 quand la première case contient une pose', () => {
+    // Contenu dans la toute première case.
+    const data = makeRgba(6, 6, 0, 0, 0, 0);
+    setPixel(data, 6, 1, 1, 0, 255, 0, 255);
+    const boxes = detectPixels(6, 6, data, { cols: 3, rows: 1, pad: 0 });
+    expect(firstContentCell(boxes, 6, 6, 3, 1, 0)).toBe(0);
+  });
+
+  it('renvoie 0 si toute la planche est vide (image uniforme)', () => {
+    // Fond blanc opaque : aucune case de contenu.
+    const data = makeRgba(6, 6, 255, 255, 255, 255);
+    const boxes = detectPixels(6, 6, data, { cols: 3, rows: 1, pad: 0 });
+    expect(firstContentCell(boxes, 6, 6, 3, 1, 0)).toBe(0);
 
   it('applique la grille par défaut de la planche (3 x 5 = 15 cases)', () => {
     // Sans options : 3 colonnes x 5 lignes, la grille réelle du menu.
