@@ -3,4 +3,6 @@ dist
 .git
 coverage
 npm-debug.log*
+.gitignore
+Dockerfile
 *.test.js
