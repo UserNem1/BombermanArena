@@ -1,5 +1,5 @@
 import { Container, Texture, Rectangle, Sprite } from 'pixi.js';
-import { TILE_SIZE } from '../core/grid';
+import { TILE_SIZE } from '../core/grid.js';
 
 const FRAME_SIZE = 32;
 const STEP = 33;

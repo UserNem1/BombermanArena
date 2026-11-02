@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+const { app, BrowserWindow } = require('electron');
 import path from 'path';
 
 function createWindow() {
@@ -15,7 +15,7 @@ function createWindow() {
   if (process.env.VITE_DEV_SERVER_URL) {
     win.loadURL(process.env.VITE_DEV_SERVER_URL);
   } else {
-    win.loadFile('dist/index.html');
+    win.loadFile('dist/game.html');
   }
 }
 
