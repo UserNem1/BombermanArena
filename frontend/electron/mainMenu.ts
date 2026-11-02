@@ -31,7 +31,7 @@ const createWindow = () => {
     },
   });
 
-  win.loadFile('index.html');
+  win.loadFile(path.join(__dirname, '..', 'index.html'));
 };
 
 /**

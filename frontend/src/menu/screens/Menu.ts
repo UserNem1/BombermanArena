@@ -67,7 +67,7 @@ export class Menu extends Container {
     // Libellé de chaque bouton et action associée. Un tableau de paires
     // [texte, fonction] évite de répéter trois fois le même code.
     const entries: [string, () => void][] = [
-      ['JOUER', () => console.log('[menu] Jouer')],
+      ['JOUER', () => window.location.assign('game.html')],
       // L'écran Options arrive sur une branche dédiée : simple trace ici.
       ['OPTIONS', () => console.log('[menu] Options (à venir)')],
       ['QUITTER', () => window.close()],

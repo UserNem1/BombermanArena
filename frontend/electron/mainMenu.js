@@ -29,7 +29,7 @@ const createWindow = () => {
             nodeIntegration: false,
         },
     });
-    win.loadFile('index.html');
+    win.loadFile(path.join(__dirname, '..', 'index.html'));
 };
 /**
  * Enregistre le handler IPC `ping` et créé la fenêtre dès que
