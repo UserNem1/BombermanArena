@@ -1,10 +1,9 @@
-import { checkWallCollision } from './core/grid';
-import { Application, Assets, Sprite, Container } from 'pixi.js';
-import { InputManager } from './core/InputManager';
-import { NetworkManager } from './core/NetworkManager';
-import { gridToPixel, drawBoard, GRID_WIDTH, GRID_HEIGHT, TILE_SIZE } from './core/grid';
-import { HUD } from './ui/HUD';
-import { Player } from './entities/Player';
+import { checkWallCollision } from './core/grid.js';
+import { Application, Assets, Container } from 'pixi.js';
+import { InputManager } from './core/InputManager.js';
+import { gridToPixel, drawBoard, GRID_WIDTH, GRID_HEIGHT, TILE_SIZE } from './core/grid.js';
+import { HUD } from './ui/HUD.js';
+import { Player } from './entities/Player.js';
 
 
 
@@ -22,8 +21,6 @@ async function main() {
   // --- Container qui regroupe tout le contenu du jeu ---
   const gameContainer = new Container();
   app.stage.addChild(gameContainer);
-
-  const network = new NetworkManager('ws://localhost:8080');
 
   const hud = new HUD(gameWidth);
   gameContainer.addChild(hud);
@@ -94,28 +91,12 @@ async function main() {
   player.update(moved, direction);
 
   if (moved && (player.x !== lastX || player.y !== lastY)) {
-    network.send('player:move', { x: player.x, y: player.y });
     lastX = player.x;
     lastY = player.y;
   }
 
   hud.updateTime(Math.floor(app.ticker.lastTime / 1000));
 });
-
-  network.on('player:moved', (data) => {
-    console.log('Un autre joueur a bougé', data);
-  });
-
-  network.on('bomb:placed', (data) => {
-    console.log('Bombe posée', data);
-  });
-
-  network.on('player:joined', (data) => {
-    console.log('Nouveau joueur', data);
-  });
-
-
-
 
   setTimeout(() => hud.updateKills(1), 3000);
 }
